@@ -36,14 +36,18 @@ export function FilterPanel({
   const hashtagId = useId()
   const listId = useId()
 
+  /**
+   * El API filtra por UN hashtag por consulta (`GET /views?hashtag=`), no por
+   * una lista. En vez de acumular chips que el servidor ignoraria, el filtro
+   * activo se reemplaza. La normalizacion (minusculas, sin `#`) replica la de
+   * `normalizeHashtag` del backend para que el termino coincida.
+   */
   const addHashtag = (raw: string) => {
     const name = raw.trim().replace(/^#/, '').toLowerCase()
-    if (!name || filters.hashtags.includes(name)) {
-      setHashtagDraft('')
-      return
-    }
-    onChange({ ...filters, hashtags: [...filters.hashtags, name] })
     setHashtagDraft('')
+
+    if (!name || filters.hashtags[0] === name) return
+    onChange({ ...filters, hashtags: [name] })
   }
 
   const removeHashtag = (name: string) => {
@@ -80,7 +84,7 @@ export function FilterPanel({
 
       <div className="field">
         <label className="field__label" htmlFor={hashtagId}>
-          Hashtags
+          Hashtag
         </label>
         <input
           id={hashtagId}

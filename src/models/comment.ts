@@ -5,14 +5,17 @@ export interface Comment {
   id: string
   texto: string
   autor: AuthorRef
-  vistaId: string
   hiloId: string
   fechaCreacion: string
   /**
-   * `true` cuando el comentario ya paso la moderacion automatica por IA.
-   * Mientras es `false` la UI debe mostrarlo como "en moderacion".
+   * El enunciado contempla moderacion automatica por IA, pero el API entregado
+   * no expone ningun campo de moderacion: todo comentario queda publicado al
+   * crearse. Se mantiene la propiedad para no perder el concepto y se fija en
+   * `true`; el dia que el API informe el estado real, solo cambia el mapper.
    */
   moderado: boolean
+  /** El API admite un unico nivel de respuestas por comentario. */
+  respuestas: Comment[]
 }
 
 /** Agrupacion de comentarios bajo una misma publicacion. */
@@ -20,5 +23,6 @@ export interface Thread {
   id: string
   tema: string
   vistaId: string
+  fechaCreacion: string
   comentarios: Comment[]
 }

@@ -1,3 +1,11 @@
+/**
+ * Punto unico de importacion de los modelos de dominio.
+ *
+ * Los DTOs del API (`./dto`) NO se reexportan aqui a proposito: solo la capa de
+ * servicio debe conocerlos. Si un componente necesita importar de `models/dto`,
+ * es senal de que falta un mapper.
+ */
+
 export type {
   User,
   UserRole,

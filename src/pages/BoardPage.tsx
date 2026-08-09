@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { FilterPanel } from '../components/views/FilterPanel'
 import { ViewCard } from '../components/views/ViewCard'
@@ -20,30 +20,29 @@ function isSortOption(value: string | null): value is SortOption {
   return value !== null && SORT_VALUES.includes(value as SortOption)
 }
 
-/**
- * Resuelve los filtros iniciales con la precedencia correcta:
- * la URL manda (para que un enlace compartido se abra tal cual), y solo si la
- * URL viene limpia se recuperan las preferencias guardadas del usuario.
- */
-function resolveInitialFilters(params: URLSearchParams): BoardFilters {
-  const fromUrl: BoardFilters = {
+/** Lee los filtros de la URL. Funcion pura: la URL es la fuente de verdad. */
+function parseFilters(params: URLSearchParams): BoardFilters {
+  const sort = params.get('sort')
+
+  return {
     category: params.get('category'),
     hashtags: params.get('hashtag')?.split(',').filter(Boolean) ?? [],
-    sort: isSortOption(params.get('sort')) ? (params.get('sort') as SortOption) : 'recientes',
+    sort: isSortOption(sort) ? sort : 'recientes',
   }
+}
 
-  const urlHasFilters =
-    fromUrl.category !== null || fromUrl.hashtags.length > 0 || params.get('sort') !== null
+function hasFilterParams(params: URLSearchParams): boolean {
+  return params.has('category') || params.has('hashtag') || params.has('sort')
+}
 
-  if (urlHasFilters) return fromUrl
-
-  return (
-    cacheService.get<BoardFilters>(CACHE_KEYS.filters) ?? {
-      category: null,
-      hashtags: [],
-      sort: 'recientes',
-    }
-  )
+/** Serializa filtros y pagina a query params, omitiendo los valores por defecto. */
+function toSearchParams(filters: BoardFilters, page: number): URLSearchParams {
+  const next = new URLSearchParams()
+  if (filters.category) next.set('category', filters.category)
+  if (filters.hashtags.length > 0) next.set('hashtag', filters.hashtags.join(','))
+  if (filters.sort !== 'recientes') next.set('sort', filters.sort)
+  if (page > 1) next.set('page', String(page))
+  return next
 }
 
 /**
@@ -57,10 +56,19 @@ export function BoardPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const isOnline = useOnlineStatus()
 
-  const [filters, setFilters] = useState<BoardFilters>(() =>
-    resolveInitialFilters(searchParams),
-  )
-  const [page, setPage] = useState(() => Number(searchParams.get('page') ?? '1') || 1)
+  /**
+   * Filtros y pagina se DERIVAN de la URL en cada render en lugar de vivir en
+   * `useState`.
+   *
+   * Con estado propio, un enlace entrante como `/?category=X` no tenia efecto
+   * si el tablero ya estaba montado: el inicializador de `useState` solo corre
+   * la primera vez, y el efecto que sincronizaba estado -> URL borraba el
+   * parametro recien llegado. Derivarlos de la URL hace que el enlace del menu
+   * de categorias, el boton Atras del navegador y un enlace compartido se
+   * comporten todos igual.
+   */
+  const filters = useMemo(() => parseFilters(searchParams), [searchParams])
+  const page = Number(searchParams.get('page') ?? '1') || 1
 
   // Los catalogos arrancan con lo que haya en cache: los filtros quedan
   // utilizables antes de que el API conteste (requisito de la seccion 3.5).
@@ -109,18 +117,26 @@ export function BoardPage() {
     }
   }, [])
 
-  // --- Persistencia y sincronizacion de filtros con la URL ------------------
+  // --- Restauracion de los filtros guardados --------------------------------
+  // Solo al entrar con la URL limpia: un enlace que ya trae filtros manda, y
+  // las preferencias del usuario nunca deben pisarlo. `replace` evita dejar una
+  // entrada intermedia en el historial del navegador.
+  const yaRestaurado = useRef(false)
+
   useEffect(() => {
-    cacheService.set<BoardFilters>(CACHE_KEYS.filters, filters)
+    if (yaRestaurado.current) return
+    yaRestaurado.current = true
 
-    const next = new URLSearchParams()
-    if (filters.category) next.set('category', filters.category)
-    if (filters.hashtags.length > 0) next.set('hashtag', filters.hashtags.join(','))
-    if (filters.sort !== 'recientes') next.set('sort', filters.sort)
-    if (page > 1) next.set('page', String(page))
+    if (hasFilterParams(searchParams)) return
 
-    setSearchParams(next, { replace: true })
-  }, [filters, page, setSearchParams])
+    const guardados = cacheService.get<BoardFilters>(CACHE_KEYS.filters)
+    if (!guardados) return
+
+    const restaurados = toSearchParams(guardados, 1)
+    if (restaurados.toString().length > 0) {
+      setSearchParams(restaurados, { replace: true })
+    }
+  }, [searchParams, setSearchParams])
 
   // --- Carga del listado ----------------------------------------------------
   useEffect(() => {
@@ -168,10 +184,28 @@ export function BoardPage() {
     wasOffline.current = !isOnline
   }, [isOnline])
 
-  const handleFiltersChange = useCallback((next: BoardFilters) => {
-    setFilters(next)
-    setPage(1)
-  }, [])
+  /**
+   * Cambiar un filtro escribe en la URL (que es de donde se leen) y persiste
+   * la preferencia. Se guarda aqui, en la accion explicita del usuario, y no en
+   * un efecto sobre `filters`: un efecto tambien se dispararia en el primer
+   * render con los valores por defecto y borraria lo que hubiera guardado.
+   */
+  const handleFiltersChange = useCallback(
+    (next: BoardFilters) => {
+      cacheService.set<BoardFilters>(CACHE_KEYS.filters, next)
+      // Cualquier cambio de filtro vuelve a la pagina 1: la paginacion anterior
+      // no tiene sentido sobre un conjunto de resultados distinto.
+      setSearchParams(toSearchParams(next, 1))
+    },
+    [setSearchParams],
+  )
+
+  const goToPage = useCallback(
+    (nextPage: number) => {
+      setSearchParams(toSearchParams(filters, nextPage))
+    },
+    [filters, setSearchParams],
+  )
 
   return (
     <div className="board">
@@ -212,7 +246,14 @@ export function BoardPage() {
             <>
               <div className="card-grid">
                 {views.map((view) => (
-                  <ViewCard key={view.id} view={view} favoriteIds={favoriteIds} />
+                  <ViewCard
+                    key={view.id}
+                    view={view}
+                    // Datos frescos: manda `esFavorita`, que el API calcula
+                    // para el usuario del token. Datos del cache: manda la
+                    // lista local de IDs, unica informacion disponible.
+                    favorito={isServingCache ? favoriteIds.includes(view.id) : view.esFavorita}
+                  />
                 ))}
               </div>
 
@@ -223,7 +264,7 @@ export function BoardPage() {
                     className="btn btn--ghost"
                     disabled={page <= 1}
                     onClick={() => {
-                      setPage((current) => Math.max(1, current - 1))
+                      goToPage(Math.max(1, page - 1))
                     }}
                   >
                     Anterior
@@ -236,7 +277,7 @@ export function BoardPage() {
                     className="btn btn--ghost"
                     disabled={page >= totalPages}
                     onClick={() => {
-                      setPage((current) => Math.min(totalPages, current + 1))
+                      goToPage(Math.min(totalPages, page + 1))
                     }}
                   >
                     Siguiente

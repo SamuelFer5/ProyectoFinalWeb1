@@ -1,25 +1,68 @@
 import { http } from './http'
+import { toUser } from './mappers'
 import type {
-  AuthResponse,
-  LoginPayload,
-  RegisterPayload,
-  User,
-} from '../models'
+  LoginResponseDto,
+  RegisterResponseDto,
+  UserWrapperDto,
+} from '../models/dto'
+import type { AuthResponse, LoginPayload, RegisterPayload, User } from '../models'
 
-/** Endpoints de autenticacion (pantallas 2 y 3 del enunciado). */
+/**
+ * Autenticacion (pantallas 2 y 3 del enunciado).
+ *
+ * El API entregado tiene un flujo de alta en DOS pasos que conviene tener muy
+ * presente:
+ *
+ *   1. POST /auth/register crea la cuenta en estado PENDING y NO devuelve
+ *      token; devuelve `{ user, activationToken }`.
+ *   2. GET /auth/activate/:token pasa la cuenta a ACTIVE.
+ *
+ * Si se omite el paso 2, POST /auth/login responde 403 "Account is pending
+ * activation" y el usuario queda encerrado fuera de su propia cuenta recien
+ * creada. Como el API no envia correos, entrega el token de activacion en la
+ * misma respuesta del registro, y es el cliente quien encadena los dos pasos.
+ */
 export const authService = {
-  /** POST /auth/login — devuelve { token, usuario }. */
-  login: (payload: LoginPayload): Promise<AuthResponse> =>
-    http.post<AuthResponse>('/auth/login', payload, { auth: false }),
+  /** POST /auth/login — respuesta `{ token, user }`. */
+  async login(payload: LoginPayload): Promise<AuthResponse> {
+    const dto = await http.post<LoginResponseDto>(
+      '/auth/login',
+      { email: payload.email, password: payload.password },
+      { auth: false },
+    )
+
+    return { token: dto.token, usuario: toUser(dto.user) }
+  },
 
   /**
-   * POST /auth/register.
-   * El API puede responder con la sesion ya iniciada o solo con el usuario
-   * creado; el contexto de autenticacion contempla ambos casos.
+   * POST /auth/register — respuesta `{ user, activationToken }`.
+   * Devuelve el token de activacion crudo para que el llamador encadene el
+   * paso de activacion.
    */
-  register: (payload: RegisterPayload): Promise<Partial<AuthResponse>> =>
-    http.post<Partial<AuthResponse>>('/auth/register', payload, { auth: false }),
+  async register(payload: RegisterPayload): Promise<{ usuario: User; activationToken: string }> {
+    const dto = await http.post<RegisterResponseDto>(
+      '/auth/register',
+      // El API espera `name`, no `nombre`.
+      { name: payload.nombre, email: payload.email, password: payload.password },
+      { auth: false },
+    )
+
+    return { usuario: toUser(dto.user), activationToken: dto.activationToken }
+  },
+
+  /** GET /auth/activate/:token — deja la cuenta en estado ACTIVE. */
+  async activate(activationToken: string): Promise<User> {
+    const dto = await http.get<UserWrapperDto>(
+      `/auth/activate/${encodeURIComponent(activationToken)}`,
+      { auth: false },
+    )
+
+    return toUser(dto.user)
+  },
 
   /** GET /auth/me — revalida el token guardado al arrancar la aplicacion. */
-  me: (signal?: AbortSignal): Promise<User> => http.get<User>('/auth/me', { signal }),
+  async me(signal?: AbortSignal): Promise<User> {
+    const dto = await http.get<UserWrapperDto>('/auth/me', { signal })
+    return toUser(dto.user)
+  },
 }

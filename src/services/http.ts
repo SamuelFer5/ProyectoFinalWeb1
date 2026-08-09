@@ -90,29 +90,105 @@ const DEFAULT_MESSAGES: Record<number, string> = {
   503: 'Ocurrio un error en el servidor. Intente mas tarde.',
 }
 
+/**
+ * Cuerpo de error del API. `errorHandler.ts` del backend responde siempre
+ * `{ error, details? }`, donde `details` es el `ZodError.flatten()` de la
+ * validacion fallida.
+ */
 interface ApiErrorBody {
-  message?: string
-  mensaje?: string
   error?: string
-  detalle?: string
-  errors?: Record<string, string | string[]>
-  errores?: Record<string, string | string[]>
+  details?: {
+    formErrors?: string[]
+    /**
+     * Ojo: `flatten()` agrupa por el PRIMER segmento de la ruta del error, y
+     * los esquemas del API envuelven todo en `body` / `query` / `params`. Un
+     * fallo en `body.password` llega, por tanto, como `{ body: [...] }` y no
+     * como `{ password: [...] }`. `extractFieldErrors` deshace esa envoltura.
+     */
+    fieldErrors?: Record<string, string[]>
+  }
+}
+
+/** Envoltorios que el API antepone a los campos reales en `fieldErrors`. */
+const ZOD_WRAPPERS = new Set(['body', 'query', 'params'])
+
+/**
+ * Traduccion de los mensajes que el API emite en ingles.
+ *
+ * El backend responde en ingles y el enunciado exige mensajes especificos y
+ * contextuales para el usuario final. En vez de mostrar el texto crudo (o de
+ * perderlo cayendo siempre al mensaje generico del codigo HTTP), se traducen
+ * los casos conocidos y el resto degrada al mensaje por defecto del status.
+ */
+const MESSAGE_TRANSLATIONS: { pattern: RegExp; message: string }[] = [
+  { pattern: /email is already registered/i, message: 'El correo ya esta registrado.' },
+  { pattern: /invalid email or password/i, message: 'Correo o contrasena incorrectos.' },
+  {
+    pattern: /account is pending activation/i,
+    message: 'Su cuenta aun no ha sido activada. Vuelva a registrarse o contacte al administrador.',
+  },
+  {
+    pattern: /account is suspended/i,
+    message: 'Su cuenta ha sido suspendida. Contacte a un administrador.',
+  },
+  { pattern: /insufficient permissions/i, message: 'No tiene permiso para realizar esta accion.' },
+  { pattern: /invalid or expired token|missing bearer token/i, message: 'Su sesion ha expirado.' },
+  { pattern: /political view not found/i, message: 'Esta publicacion no existe o fue retirada.' },
+  { pattern: /category (does not exist|not found)/i, message: 'La categoria seleccionada ya no existe.' },
+  { pattern: /author not found/i, message: 'Este autor no existe.' },
+  { pattern: /user not found/i, message: 'El usuario indicado no existe.' },
+  { pattern: /comment thread not found/i, message: 'Este hilo de comentarios ya no existe.' },
+  {
+    pattern: /only the author or a superadmin/i,
+    message: 'Solo el autor de la publicacion puede editarla.',
+  },
+  {
+    pattern: /unique fields already exists/i,
+    message: 'Ya existe un registro con esos datos.',
+  },
+  { pattern: /validation failed/i, message: 'Revise los datos ingresados.' },
+  { pattern: /route not found/i, message: 'El recurso solicitado no existe.' },
+  { pattern: /internal server error/i, message: 'Ocurrio un error en el servidor. Intente mas tarde.' },
+]
+
+function translate(raw: string | undefined): string | null {
+  if (!raw) return null
+  const match = MESSAGE_TRANSLATIONS.find((entry) => entry.pattern.test(raw))
+  return match?.message ?? null
 }
 
 /**
- * Normaliza el mapa de errores por campo. El API puede devolver un string o un
- * array de strings por campo; la UI siempre quiere un solo mensaje por input.
+ * Normaliza el mapa de errores por campo para pintarlos inline en el input que
+ * corresponde. Descarta los envoltorios `body`/`query`/`params` que introduce
+ * el esquema de validacion del API.
  */
 function extractFieldErrors(body: ApiErrorBody): FieldErrors {
-  const source = body.errors ?? body.errores
+  const source = body.details?.fieldErrors
   if (!source) return {}
 
   const result: FieldErrors = {}
-  for (const [field, message] of Object.entries(source)) {
-    const text = Array.isArray(message) ? message[0] : message
+  for (const [field, messages] of Object.entries(source)) {
+    if (ZOD_WRAPPERS.has(field)) continue
+    const text = messages[0]
     if (typeof text === 'string' && text.length > 0) result[field] = text
   }
   return result
+}
+
+/**
+ * Mensajes de validacion que quedaron atrapados bajo `body`/`query`/`params`.
+ * Se agregan al mensaje global para que el usuario sepa QUE fallo aunque el
+ * API no diga en cual campo.
+ */
+function extractWrappedDetail(body: ApiErrorBody): string | null {
+  const source = body.details?.fieldErrors
+  if (!source) return null
+
+  for (const wrapper of ZOD_WRAPPERS) {
+    const messages = source[wrapper]
+    if (messages && messages.length > 0) return messages.join(' ')
+  }
+  return body.details?.formErrors?.[0] ?? null
 }
 
 async function toApiError(response: Response): Promise<ApiError> {
@@ -125,21 +201,24 @@ async function toApiError(response: Response): Promise<ApiError> {
     // Respuesta de error sin cuerpo JSON: se usa el mensaje por defecto.
   }
 
+  const fieldErrors = extractFieldErrors(body)
+  const detail = extractWrappedDetail(body)
+
+  // Prioridad: traduccion conocida > detalle de validacion > mensaje por
+  // codigo HTTP. La excepcion tecnica cruda nunca llega al usuario.
   const message =
-    body.message ??
-    body.mensaje ??
-    body.detalle ??
-    body.error ??
+    translate(body.error) ??
+    (response.status === 400 || response.status === 422 ? detail : null) ??
     DEFAULT_MESSAGES[response.status] ??
     'Ocurrio un error inesperado.'
 
-  // Se registra en consola para depuracion, pero nunca se muestra crudo al
-  // usuario: la UI solo consume `message`, que ya viene en lenguaje natural.
+  // Se registra en consola para depuracion, tal como pide el enunciado para
+  // los 5xx; el usuario solo ve `message`, ya en lenguaje natural.
   if (response.status >= 500) {
     console.error(`[http] ${response.status} ${response.url}`, body)
   }
 
-  return new ApiError(response.status, message, extractFieldErrors(body))
+  return new ApiError(response.status, message, fieldErrors)
 }
 
 const NETWORK_ERROR_MESSAGE =

@@ -1,5 +1,11 @@
 import { http, buildQuery } from './http'
 import { CACHE_KEYS, cacheService } from './cache.service'
+import { toCategory, toHashtag } from './mappers'
+import type {
+  CategoriesResponseDto,
+  CategoryResponseDto,
+  HashtagsResponseDto,
+} from '../models/dto'
 import type { Category, Hashtag } from '../models'
 
 /**
@@ -35,26 +41,39 @@ export const catalogService = {
   readCachedHashtags,
   readStaleHashtags,
 
-  /** GET /categories — refresca el cache al recibir respuesta. */
+  /** GET /categories — solo las activas. Refresca el cache al responder. */
   async fetchCategories(signal?: AbortSignal): Promise<Category[]> {
-    const categories = await http.get<Category[]>('/categories', {
+    const dto = await http.get<CategoriesResponseDto>('/categories', {
       auth: false,
       signal,
     })
+
+    const categories = dto.categories.map(toCategory)
     cacheService.set(CACHE_KEYS.categories, categories)
     return categories
   },
 
-  /** GET /categories/:id — metadatos de una categoria concreta. */
-  fetchCategory: (id: string, signal?: AbortSignal): Promise<Category> =>
-    http.get<Category>(`/categories/${id}`, { auth: false, signal }),
-
-  /** GET /hashtags — refresca el cache al recibir respuesta. */
-  async fetchHashtags(signal?: AbortSignal): Promise<Hashtag[]> {
-    const hashtags = await http.get<Hashtag[]>('/hashtags', {
+  /** GET /categories/:id — metadatos de una categoria concreta. Puede dar 404. */
+  async fetchCategory(id: string, signal?: AbortSignal): Promise<Category> {
+    const dto = await http.get<CategoryResponseDto>(`/categories/${id}`, {
       auth: false,
       signal,
     })
+
+    return toCategory(dto.category)
+  },
+
+  /**
+   * GET /hashtags — el API devuelve como maximo 20 ordenados alfabeticamente.
+   * Refresca el cache al responder.
+   */
+  async fetchHashtags(signal?: AbortSignal): Promise<Hashtag[]> {
+    const dto = await http.get<HashtagsResponseDto>('/hashtags', {
+      auth: false,
+      signal,
+    })
+
+    const hashtags = dto.hashtags.map(toHashtag)
     cacheService.set(CACHE_KEYS.hashtags, hashtags)
     return hashtags
   },
@@ -63,9 +82,12 @@ export const catalogService = {
    * GET /hashtags?q= — sugerencias para el autocomplete del formulario.
    * No toca el cache: es una busqueda puntual, no el catalogo completo.
    */
-  searchHashtags: (term: string, signal?: AbortSignal): Promise<Hashtag[]> =>
-    http.get<Hashtag[]>(`/hashtags${buildQuery({ q: term })}`, {
+  async searchHashtags(term: string, signal?: AbortSignal): Promise<Hashtag[]> {
+    const dto = await http.get<HashtagsResponseDto>(`/hashtags${buildQuery({ q: term })}`, {
       auth: false,
       signal,
-    }),
+    })
+
+    return dto.hashtags.map(toHashtag)
+  },
 }

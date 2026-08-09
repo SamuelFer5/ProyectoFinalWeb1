@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/layout/Layout'
 import { RequireAuth, RequireGuest, RequireSuperadmin } from './components/routing/Guards'
 import { BoardPage } from './pages/BoardPage'
+import { ViewDetailPage } from './pages/ViewDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -39,17 +40,7 @@ export function AppRouter() {
             }
           />
 
-          <Route
-            path="views/:id"
-            element={
-              <PlaceholderPage
-                pantalla={4}
-                titulo="Detalle de Publicacion"
-                archivo="src/pages/ViewDetailPage.tsx"
-                descripcion="Las dos caras con reacciones independientes, fuentes propias por lado, hilos de comentarios e historial local. Reutiliza el componente SidePanel, que ya esta construido."
-              />
-            }
-          />
+          <Route path="views/:id" element={<ViewDetailPage />} />
 
           <Route
             path="authors/:id"

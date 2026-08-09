@@ -61,10 +61,15 @@ export function LoginPage() {
 
       // El enunciado pide distinguir credenciales invalidas (401) de cuenta
       // baneada (403) con mensajes especificos, no un error generico.
+      //
+      // El 403 del API cubre DOS situaciones distintas —cuenta suspendida y
+      // cuenta sin activar— y el mensaje ya viene diferenciado y traducido
+      // desde la capa HTTP, asi que aqui se respeta tal cual en lugar de
+      // aplastar ambas con un texto unico.
       if (isApiError(error) && error.status === 401) {
         setGlobalError('Correo o contrasena incorrectos.')
       } else if (isApiError(error) && error.status === 403) {
-        setGlobalError('Su cuenta ha sido suspendida. Contacte a un administrador.')
+        setGlobalError(error.message)
       } else {
         setGlobalError(toUserMessage(error, 'No fue posible iniciar sesion.'))
       }

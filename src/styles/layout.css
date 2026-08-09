@@ -40,7 +40,14 @@
 
 .navbar__inner {
   display: grid;
-  grid-template-columns: auto auto;
+  /*
+   * `minmax(0, ...)` en ambas columnas es lo que impide el desbordamiento
+   * horizontal en moviles: con `auto auto`, las pistas se dimensionan al
+   * contenido y los botones de sesion empujan la barra mas alla del ancho de
+   * la pantalla. Con el minimo en cero la columna puede encogerse y los
+   * enlaces se reparten en dos lineas (ver `flex-wrap` en .navbar__links).
+   */
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   grid-template-areas:
     'brand links'
     'search search';
@@ -55,6 +62,13 @@
   grid-area: brand;
   display: inline-flex;
   align-items: center;
+  /*
+   * Cuando los enlaces se reparten en dos lineas (moviles), la marca debe
+   * quedar en la primera junto a ellos y no centrada entre ambas, que es lo
+   * que haria el `align-items: center` del contenedor.
+   */
+  align-self: start;
+  min-height: 2.25rem;
   gap: 0.45rem;
   color: var(--text);
   font-size: 1.05rem;
@@ -107,6 +121,9 @@
   grid-area: links;
   display: flex;
   align-items: center;
+  /* En pantallas estrechas los controles bajan de linea en vez de desbordar. */
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 0.5rem;
   font-size: 0.88rem;
   font-weight: 600;
@@ -115,6 +132,63 @@
 .navbar__links > a {
   color: var(--text-muted);
   padding: 0.35rem 0.2rem;
+}
+
+/* --- Menu de categorias de la navbar --- */
+.navbar__categories {
+  position: relative;
+}
+.navbar__categories > summary {
+  padding: 0.35rem 0.2rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  list-style: none;
+}
+.navbar__categories > summary::-webkit-details-marker {
+  display: none;
+}
+.navbar__categories > summary::after {
+  content: ' ▾';
+}
+.navbar__categories > summary:hover,
+.navbar__categories[open] > summary {
+  color: var(--brand);
+}
+.navbar__categories > summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+.navbar__categories > ul {
+  position: absolute;
+  right: 0;
+  z-index: 50;
+  min-width: 12rem;
+  max-height: 60vh;
+  overflow-y: auto;
+  margin-top: 0.4rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  list-style: none;
+}
+.navbar__categories > ul a {
+  display: block;
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-weight: 500;
+}
+.navbar__categories > ul a:hover {
+  background: var(--surface-2);
+  text-decoration: none;
+}
+.navbar__categories-empty {
+  padding: 0.45rem 0.6rem;
+  color: var(--text-muted);
+  font-weight: 400;
 }
 
 .navbar__links > a:hover,
@@ -463,6 +537,25 @@
 .comment-form label {
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.comment-form h3 {
+  font-size: 1rem;
+  margin-bottom: 0;
+}
+
+/* El input de tema del hilo nuevo debe ocupar el ancho como el textarea. */
+.comment-form .field__input {
+  width: 100%;
+}
+
+/* Respuestas de un comentario: el API admite un unico nivel de anidamiento. */
+.comment__replies {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+  padding-left: 0.75rem;
 }
 
 .threads__login-hint {

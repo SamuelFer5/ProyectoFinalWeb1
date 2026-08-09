@@ -80,10 +80,10 @@ export function RegisterPage() {
 
     try {
       await register({ nombre: nombre.trim(), email: email.trim(), password })
-      toast.success('Cuenta creada correctamente')
-      // Si el API devolvio token, el guard de invitado ya habra redirigido al
-      // tablero; si no, se envia al login para confirmar credenciales.
-      navigate('/login', { replace: true })
+      toast.success('Cuenta creada. Bienvenido a LasDosCaras')
+      // `register` deja la sesion iniciada (crea, activa y autentica), asi que
+      // se entra directo al tablero en lugar de pedir credenciales otra vez.
+      navigate('/', { replace: true })
     } catch (error) {
       const apiFieldErrors = toFieldErrors(error)
 

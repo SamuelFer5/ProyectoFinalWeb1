@@ -1,6 +1,6 @@
 import { http } from './http'
 import { CACHE_KEYS, cacheService } from './cache.service'
-import type { View } from '../models'
+import type { FavoriteResponseDto, MyFavoritesResponseDto } from '../models/dto'
 
 /**
  * Favoritos con doble escritura: API + cache local.
@@ -9,6 +9,10 @@ import type { View } from '../models'
  * desde el primer render, sin esperar respuesta del API. Para eso se mantiene
  * en `lasdoscaras_favorites` la lista de IDs favoritos del usuario, que se
  * sincroniza al iniciar sesion y se actualiza en cada alta o baja.
+ *
+ * Nota sobre el API: `GET /users/me/favorites` devuelve UNICAMENTE los IDs
+ * (`{ favorites: string[] }`), no las publicaciones completas. La pantalla de
+ * perfil que liste "Mis Favoritos" debera pedir cada publicacion por su ID.
  */
 
 function readIds(): string[] {
@@ -28,33 +32,38 @@ export const favoritesService = {
    * GET /users/me/favorites — se llama justo despues del login y desde el
    * perfil. Persiste los IDs para que el tablero no tenga que consultarlos.
    */
-  async sync(signal?: AbortSignal): Promise<View[]> {
-    const favorites = await http.get<View[]>('/users/me/favorites', { signal })
-    writeIds(favorites.map((view) => view.id))
-    return favorites
+  async sync(signal?: AbortSignal): Promise<string[]> {
+    const dto = await http.get<MyFavoritesResponseDto>('/users/me/favorites', { signal })
+    writeIds(dto.favorites)
+    return dto.favorites
   },
 
   /** POST /views/:id/favorite — alta en el API y en el cache. */
-  async add(viewId: string): Promise<void> {
-    await http.post<void>(`/views/${viewId}/favorite`)
+  async add(viewId: string): Promise<boolean> {
+    const dto = await http.post<FavoriteResponseDto>(`/views/${viewId}/favorite`)
+
     const ids = readIds()
     if (!ids.includes(viewId)) writeIds([...ids, viewId])
+    return dto.isFavorite
   },
 
   /** DELETE /views/:id/favorite — baja en el API y en el cache. */
-  async remove(viewId: string): Promise<void> {
-    await http.delete<void>(`/views/${viewId}/favorite`)
+  async remove(viewId: string): Promise<boolean> {
+    const dto = await http.delete<FavoriteResponseDto>(`/views/${viewId}/favorite`)
+
     writeIds(readIds().filter((id) => id !== viewId))
+    return dto.isFavorite
   },
 
-  /** Alterna el estado y devuelve el valor resultante. */
+  /** Alterna el estado y devuelve el valor resultante segun el API. */
   async toggle(viewId: string): Promise<boolean> {
-    const wasFavorite = readIds().includes(viewId)
-    if (wasFavorite) {
-      await favoritesService.remove(viewId)
-      return false
-    }
-    await favoritesService.add(viewId)
-    return true
+    return readIds().includes(viewId)
+      ? favoritesService.remove(viewId)
+      : favoritesService.add(viewId)
+  },
+
+  /** Se invoca al cerrar sesion: los favoritos son de la cuenta, no del equipo. */
+  clear(): void {
+    cacheService.remove(CACHE_KEYS.favorites)
   },
 }

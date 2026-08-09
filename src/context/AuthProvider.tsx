@@ -139,16 +139,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [persistSession],
   )
 
+  /**
+   * Alta de cuenta en los tres pasos que impone el API.
+   *
+   * `POST /auth/register` NO devuelve token: crea la cuenta en estado PENDING
+   * y entrega un `activationToken`. Si no se activa, `POST /auth/login`
+   * responde 403 "Account is pending activation" y el usuario recien
+   * registrado no puede entrar. Como el API no manda correos y expone el token
+   * en la propia respuesta, el cliente encadena registro -> activacion ->
+   * login, de modo que el usuario termina el formulario ya autenticado.
+   */
   const register = useCallback(
     async (payload: RegisterPayload) => {
-      const response = await authService.register(payload)
+      const { activationToken } = await authService.register(payload)
 
-      // Algunos APIs devuelven la sesion ya iniciada tras registrar y otros
-      // solo confirman la creacion. Si vino el token se aprovecha; si no, la
-      // pantalla de registro redirige al login.
-      if (response.token && response.usuario) {
-        await persistSession({ token: response.token, usuario: response.usuario })
-      }
+      await authService.activate(activationToken)
+
+      const { token, usuario } = await authService.login({
+        email: payload.email,
+        password: payload.password,
+      })
+
+      await persistSession({ token, usuario })
     },
     [persistSession],
   )
