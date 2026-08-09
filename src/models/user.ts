@@ -5,7 +5,15 @@
  * construcciones de TypeScript que emiten codigo en tiempo de ejecucion.
  */
 export type UserRole = 'user' | 'superadmin'
-export type UserStatus = 'activo' | 'baneado'
+
+/**
+ * El enunciado contempla dos estados (activo / baneado) pero el API maneja
+ * tres: ademas de ACTIVE y SUSPENDED existe PENDING, el estado en el que nace
+ * toda cuenta recien registrada hasta que se activa. Se expone tal cual porque
+ * el login responde 403 con un motivo distinto en cada caso y la UI necesita
+ * poder explicarle al usuario cual de los dos le ocurrio.
+ */
+export type UserStatus = 'activo' | 'baneado' | 'pendiente'
 
 export interface User {
   id: string
@@ -25,6 +33,7 @@ export interface AuthorRef {
 /** Perfil publico de un autor — GET /authors/:id */
 export interface AuthorProfile extends AuthorRef {
   fechaRegistro: string
+  totalPublicaciones: number
 }
 
 export interface LoginPayload {
@@ -38,14 +47,11 @@ export interface RegisterPayload {
   password: string
 }
 
-/** Respuesta de POST /auth/login segun el enunciado: { token, usuario }. */
+/** Sesion resultante de POST /auth/login. */
 export interface AuthResponse {
   token: string
   usuario: User
 }
 
 /** Lo que se persiste en la clave `lasdoscaras_auth`. */
-export interface AuthSession {
-  token: string
-  usuario: User
-}
+export type AuthSession = AuthResponse
