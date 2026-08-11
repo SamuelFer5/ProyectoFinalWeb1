@@ -5,6 +5,7 @@ import { BoardPage } from './pages/BoardPage'
 import { ViewDetailPage } from './pages/ViewDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { SearchPage } from './pages/SearchPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ForbiddenPage } from './pages/ForbiddenPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
@@ -54,17 +55,7 @@ export function AppRouter() {
             }
           />
 
-          <Route
-            path="search"
-            element={
-              <PlaceholderPage
-                pantalla={13}
-                titulo="Resultados de Busqueda"
-                archivo="src/pages/SearchPage.tsx"
-                descripcion="Resultados de la busqueda global con el termino resaltado, campo editable para refinar y estado vacio descriptivo. El parametro q ya viaja en la URL desde la navbar."
-              />
-            }
-          />
+          <Route path="search" element={<SearchPage />} />
 
           <Route path="403" element={<ForbiddenPage />} />
 

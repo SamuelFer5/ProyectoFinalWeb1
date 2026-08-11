@@ -610,6 +610,47 @@ a.badge--category:hover {
   border-bottom: 1px solid var(--warning);
 }
 
+/* --- Pantalla 13: resultados de busqueda ---------------------------------- */
+
+.search-page__header h1 {
+  margin-bottom: 0.25rem;
+}
+
+.search-page__count {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.search-page__refine {
+  margin: 1rem 0 1.5rem;
+}
+
+.search-page__refine input {
+  width: 100%;
+  max-width: 32rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.search-page__refine input:focus {
+  border-color: var(--brand);
+}
+
+/* Resaltado del termino buscado. El amarillo por defecto del navegador es
+   ilegible en tema oscuro; con variables el contraste se mantiene en ambos. */
+mark {
+  background: var(--warning-soft);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0 0.15em;
+}
+
 /* --- Escritorio ----------------------------------------------------------- */
 
 @media (min-width: 768px) {
