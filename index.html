@@ -1,10 +1,40 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>lasdoscaras</title>
+    <meta
+      name="description"
+      content="LasDosCaras — las dos narrativas de cada tema. Plataforma que presenta siempre ambas perspectivas de cualquier tema social, politico, economico o cultural."
+    />
+    <title>LasDosCaras — Las dos narrativas de cada tema</title>
+    <!--
+      Aplicacion del tema ANTES del primer render para evitar el destello de
+      tema incorrecto (FOUC). Requisito 3.5 del enunciado: la preferencia
+      guardada en lasdoscaras_theme debe aplicarse antes de renderizar la UI.
+      Se lee el mismo sobre { value, timestamp } que escribe CacheService.
+    -->
+    <script>
+      (function () {
+        var stored = null
+        try {
+          var raw = localStorage.getItem('lasdoscaras_theme')
+          if (raw) {
+            var parsed = JSON.parse(raw)
+            stored = parsed && typeof parsed === 'object' ? parsed.value : parsed
+          }
+        } catch (e) {
+          stored = null
+        }
+        if (stored !== 'light' && stored !== 'dark') {
+          stored = window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+        }
+        document.documentElement.dataset.theme = stored
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>
