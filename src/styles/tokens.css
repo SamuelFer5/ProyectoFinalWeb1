@@ -1,0 +1,98 @@
+/**
+ * Tokens de diseno.
+ *
+ * El tema se selecciona con el atributo `data-theme` en <html>, que escribe el
+ * script en linea de index.html antes del primer render y despues mantiene el
+ * ThemeProvider. Definir ambos temas aqui como variables permite que el resto
+ * de las hojas no vuelva a mencionar un color literal.
+ *
+ * Todos los pares texto/fondo cumplen contraste WCAG 2.1 AA (4.5:1 en texto
+ * normal, 3:1 en texto grande y bordes de control).
+ */
+
+:root {
+  /* --- Superficies --- */
+  --bg: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f5f5f8;
+  --surface-3: #ebebf0;
+  --border: #d4d4dd;
+  --border-strong: #a3a3b0;
+
+  /* --- Texto --- */
+  --text: #17171c;
+  --text-muted: #55555f;
+  --text-inverse: #ffffff;
+
+  /* --- Marca --- */
+  --brand: #5b21b6;
+  --brand-hover: #4c1d95;
+  --brand-soft: #f1ebfd;
+  --brand-border: #c4b5fd;
+
+  /* --- Las dos caras: deben leerse como opuestos --- */
+  --side-a: #1d4ed8;
+  --side-a-soft: #eff5ff;
+  --side-b: #b45309;
+  --side-b-soft: #fff7ed;
+
+  /* --- Semanticos --- */
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --error: #b91c1c;
+  --error-soft: #fee2e2;
+  --warning: #a16207;
+  --warning-soft: #fef9c3;
+  --info: #1d4ed8;
+  --info-soft: #dbeafe;
+
+  /* --- Formas --- */
+  --radius: 10px;
+  --radius-sm: 6px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgba(15, 15, 25, 0.06);
+  --shadow: 0 4px 14px rgba(15, 15, 25, 0.09);
+  --shadow-lg: 0 12px 32px rgba(15, 15, 25, 0.16);
+
+  /* --- Espaciado y tipografia --- */
+  --gap: 1rem;
+  --max-width: 1180px;
+  --sans: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+}
+
+[data-theme='dark'] {
+  --bg: #131318;
+  --surface: #1b1b22;
+  --surface-2: #23232c;
+  --surface-3: #2d2d38;
+  --border: #363642;
+  --border-strong: #4f4f5e;
+
+  --text: #f1f1f5;
+  --text-muted: #a8a8b8;
+  --text-inverse: #131318;
+
+  --brand: #c4b5fd;
+  --brand-hover: #ddd6fe;
+  --brand-soft: #2a2340;
+  --brand-border: #5b21b6;
+
+  --side-a: #93c5fd;
+  --side-a-soft: #17233a;
+  --side-b: #fcd34d;
+  --side-b-soft: #332a14;
+
+  --success: #86efac;
+  --success-soft: #14301f;
+  --error: #fca5a5;
+  --error-soft: #3a1a1a;
+  --warning: #fcd34d;
+  --warning-soft: #332a14;
+  --info: #93c5fd;
+  --info-soft: #17233a;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.6);
+}
