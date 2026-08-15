@@ -650,7 +650,23 @@ mark {
   border-radius: var(--radius-sm);
   padding: 0 0.15em;
 }
+/* --- Pantalla 11: perfil publico de autor --------------------------------- */
 
+.author-page__header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.author-page__header h1 {
+  margin-bottom: 0.25rem;
+}
+
+.author-page__meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
 /* --- Escritorio ----------------------------------------------------------- */
 
 @media (min-width: 768px) {

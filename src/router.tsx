@@ -9,6 +9,7 @@ import { SearchPage } from './pages/SearchPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ForbiddenPage } from './pages/ForbiddenPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
+import { AuthorProfilePage } from './pages/AuthorProfilePage'
 
 /**
  * Tabla de rutas de la aplicacion (seccion 5 del enunciado).
@@ -43,17 +44,7 @@ export function AppRouter() {
 
           <Route path="views/:id" element={<ViewDetailPage />} />
 
-          <Route
-            path="authors/:id"
-            element={
-              <PlaceholderPage
-                pantalla={11}
-                titulo="Perfil Publico de Autor"
-                archivo="src/pages/AuthorProfilePage.tsx"
-                descripcion="Nombre y fecha de registro del autor, mas la grilla de todas sus publicaciones reutilizando ViewCard."
-              />
-            }
-          />
+          <Route path="authors/:id" element={<AuthorProfilePage />} />
 
           <Route path="search" element={<SearchPage />} />
 
