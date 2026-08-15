@@ -650,6 +650,99 @@ mark {
   border-radius: var(--radius-sm);
   padding: 0 0.15em;
 }
+/* --- Pantalla 5: crear / editar publicacion ------------------------------- */
+
+.form-page {
+  max-width: 46rem;
+}
+
+.form-page__loading {
+  color: var(--text-muted);
+}
+
+.form-page__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+}
+
+.draft-notice {
+  padding: 0.85rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--info);
+  border-radius: var(--radius);
+  background: var(--info-soft);
+}
+
+.draft-notice p {
+  margin: 0 0 0.6rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.draft-notice__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.side-fields {
+  margin: 0 0 1.5rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.side-fields legend {
+  padding: 0 0.5rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.side-fields--a legend {
+  color: var(--side-a);
+}
+
+.side-fields--b legend {
+  color: var(--side-b);
+}
+
+.sources__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.sources__header h3 {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.source-row {
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.source-row__remove {
+  font-size: 0.8rem;
+}
+
+.source-row__preview {
+  margin-top: 0.75rem;
+  aspect-ratio: 16 / 9;
+}
+
+.source-row__preview iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  border-radius: var(--radius-sm);
+}
 /* --- Pantalla 11: perfil publico de autor --------------------------------- */
 
 .author-page__header {

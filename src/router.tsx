@@ -10,6 +10,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { ForbiddenPage } from './pages/ForbiddenPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { AuthorProfilePage } from './pages/AuthorProfilePage'
+import { ViewFormPage } from './pages/ViewFormPage'
 
 /**
  * Tabla de rutas de la aplicacion (seccion 5 del enunciado).
@@ -58,28 +59,8 @@ export function AppRouter() {
 
           {/* --- Requieren sesion iniciada ------------------------------ */}
           <Route element={<RequireAuth />}>
-            <Route
-              path="views/new"
-              element={
-                <PlaceholderPage
-                  pantalla={5}
-                  titulo="Crear Publicacion"
-                  archivo="src/pages/ViewFormPage.tsx"
-                  descripcion="Formulario con las dos posturas (minimo 100 caracteres cada una), fuentes dinamicas e independientes por lado, tag input de hashtags y borrador automatico en lasdoscaras_draft."
-                />
-              }
-            />
-            <Route
-              path="views/:id/edit"
-              element={
-                <PlaceholderPage
-                  pantalla={5}
-                  titulo="Editar Publicacion"
-                  archivo="src/pages/ViewFormPage.tsx"
-                  descripcion="El mismo formulario en modo edicion: carga los datos actuales via GET antes de renderizar. Solo el autor o un superadmin pueden acceder."
-                />
-              }
-            />
+            <Route path="views/new" element={<ViewFormPage />} />
+            <Route path="views/:id/edit" element={<ViewFormPage />} />
             <Route
               path="profile"
               element={
