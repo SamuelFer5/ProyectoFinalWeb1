@@ -10,41 +10,10 @@ import { favoritesService } from '../services/favorites.service'
 import { CACHE_KEYS, cacheService } from '../services/cache.service'
 import { useOnlineStatus } from '../hooks/useOnlineStatus'
 import { toUserMessage } from '../utils/errors'
-import type { BoardFilters, Category, Hashtag, SortOption, View } from '../models'
+import { hasFilterParams, parseFilters, toSearchParams } from '../utils/filters'
+import type { BoardFilters, Category, Hashtag, View } from '../models'
 
 const PAGE_SIZE = 9
-
-const SORT_VALUES: SortOption[] = ['recientes', 'likesA', 'likesB']
-
-function isSortOption(value: string | null): value is SortOption {
-  return value !== null && SORT_VALUES.includes(value as SortOption)
-}
-
-/** Lee los filtros de la URL. Funcion pura: la URL es la fuente de verdad. */
-function parseFilters(params: URLSearchParams): BoardFilters {
-  const sort = params.get('sort')
-
-  return {
-    category: params.get('category'),
-    hashtags: params.get('hashtag')?.split(',').filter(Boolean) ?? [],
-    sort: isSortOption(sort) ? sort : 'recientes',
-  }
-}
-
-function hasFilterParams(params: URLSearchParams): boolean {
-  return params.has('category') || params.has('hashtag') || params.has('sort')
-}
-
-/** Serializa filtros y pagina a query params, omitiendo los valores por defecto. */
-function toSearchParams(filters: BoardFilters, page: number): URLSearchParams {
-  const next = new URLSearchParams()
-  if (filters.category) next.set('category', filters.category)
-  if (filters.hashtags.length > 0) next.set('hashtag', filters.hashtags.join(','))
-  if (filters.sort !== 'recientes') next.set('sort', filters.sort)
-  if (page > 1) next.set('page', String(page))
-  return next
-}
-
 /**
  * Pantalla 1 — Tablero principal.
  *

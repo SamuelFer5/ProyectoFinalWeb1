@@ -760,6 +760,57 @@ mark {
   color: var(--text-muted);
   font-size: 0.9rem;
 }
+/* --- Pantalla 6: pagina de categoria --------------------------------------- */
+
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* El separador es decorativo: se genera en CSS para que no lo lea el lector
+   de pantalla, que ya anuncia la lista y el aria-current del ultimo nivel. */
+.breadcrumb li + li::before {
+  content: '/';
+  margin-right: 0.4rem;
+  color: var(--border-strong);
+}
+
+.breadcrumb a {
+  color: var(--text-muted);
+}
+
+.breadcrumb a:hover {
+  color: var(--brand);
+}
+
+.breadcrumb [aria-current='page'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.category-page__header {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.category-page__header h1 {
+  margin-bottom: 0.25rem;
+}
+
+.category-page__desc,
+.category-page__meta {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
 /* --- Escritorio ----------------------------------------------------------- */
 
 @media (min-width: 768px) {

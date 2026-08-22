@@ -114,15 +114,15 @@ export function Navbar() {
             Tablero
           </NavLink>
 
-          {/*
+           {/*
             Menu de categorias. Se construye con <details>/<summary> en lugar de
             un dropdown a mano porque el navegador ya aporta gratis el estado
             abierto/cerrado, el foco y la operacion por teclado (Enter/Espacio),
             que es justo lo que exige el criterio de accesibilidad.
 
-            Cada entrada lleva al tablero filtrado (`/?category=`) y no a
-            /categories/:id: esa pantalla (la 6) todavia no esta construida, y
-            enlazar a un marcador seria peor experiencia que al filtro real.
+            Cada entrada lleva a la pagina de categoria (Pantalla 6), que es la
+            ruta canonica de una categoria: tiene encabezado propio, conteo y
+            URL compartible.
           */}
           <details className="navbar__categories" ref={categoriesMenu}>
             <summary aria-label="Ver categorias">Categorias</summary>
@@ -133,7 +133,7 @@ export function Navbar() {
                 categories.map((category) => (
                   <li key={category.id}>
                     <Link
-                      to={`/?category=${category.id}`}
+                      to={`/categories/${category.id}`}
                       onClick={() => {
                         // Cerrar el menu al navegar: sin esto quedaria abierto
                         // sobre la pantalla de destino.
