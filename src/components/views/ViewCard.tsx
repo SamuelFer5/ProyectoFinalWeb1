@@ -26,6 +26,13 @@ interface ViewCardProps {
   compacta?: boolean
   /** Termino a resaltar en el titulo, en la pantalla de resultados. */
   resaltar?: string
+  /**
+   * Aviso al contenedor cuando cambia el estado de favorito.
+   *
+   * Solo lo usa la seccion "Mis Favoritos" del perfil, que necesita quitar la
+   * tarjeta de la lista cuando el usuario deja de marcarla.
+   */
+  onFavoriteToggle?: (isFavorite: boolean) => void
 }
 
 /**
@@ -35,13 +42,19 @@ interface ViewCardProps {
  * Punto clave del enunciado: los contadores del Lado A y del Lado B se
  * muestran por separado, nunca sumados, porque son magnitudes independientes.
  */
-export function ViewCard({ view, favorito, compacta = false, resaltar }: ViewCardProps) {
+export function ViewCard({
+  view,
+  favorito,
+  compacta = false,
+  resaltar,
+  onFavoriteToggle,
+}: ViewCardProps) {
   return (
     <article className="card">
       <header className="card__header">
         <span className="badge badge--category">{view.categoria.nombre}</span>
         <div className="card__actions">
-          <FavoriteButton viewId={view.id} initialActive={favorito} />
+          <FavoriteButton viewId={view.id} initialActive={favorito} onToggle={onFavoriteToggle} />
           <ShareButton viewId={view.id} titulo={view.titulo} />
         </div>
       </header>

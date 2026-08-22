@@ -10,6 +10,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { ForbiddenPage } from './pages/ForbiddenPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { CategoryPage } from './pages/CategoryPage'
+import { ProfilePage } from './pages/ProfilePage'
 import { AuthorProfilePage } from './pages/AuthorProfilePage'
 import { ViewFormPage } from './pages/ViewFormPage'
 
@@ -52,17 +53,7 @@ export function AppRouter() {
           <Route element={<RequireAuth />}>
             <Route path="views/new" element={<ViewFormPage />} />
             <Route path="views/:id/edit" element={<ViewFormPage />} />
-            <Route
-              path="profile"
-              element={
-                <PlaceholderPage
-                  pantalla={10}
-                  titulo="Perfil de Usuario"
-                  archivo="src/pages/ProfilePage.tsx"
-                  descripcion="Datos del usuario y tres secciones: Mis Publicaciones, Mis Favoritos e Historial (leido de lasdoscaras_history, sin llamadas al API)."
-                />
-              }
-            />
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
 
           {/* --- Requieren rol de superadministrador -------------------- */}

@@ -9,6 +9,15 @@ interface FavoriteButtonProps {
   viewId: string
   /** Estado inicial leido del cache `lasdoscaras_favorites`. */
   initialActive: boolean
+  /**
+   * Aviso opcional al contenedor cuando el API confirma el cambio.
+   *
+   * Existe para la seccion "Mis Favoritos" del perfil, que necesita sacar la
+   * tarjeta de la lista al quitar el favorito. Es opcional a proposito: el
+   * tablero y el detalle no necesitan reaccionar, y obligarlos a pasar un
+   * callback vacio solo agregaria ruido.
+   */
+  onToggle?: (isFavorite: boolean) => void
 }
 
 /**
@@ -18,7 +27,7 @@ interface FavoriteButtonProps {
  * rechaza la operacion, de forma que la interaccion se siente instantanea sin
  * mentirle al usuario cuando algo falla.
  */
-export function FavoriteButton({ viewId, initialActive }: FavoriteButtonProps) {
+export function FavoriteButton({ viewId, initialActive, onToggle }: FavoriteButtonProps) {
   const { isAuthenticated } = useAuth()
   const toast = useToast()
   const isOnline = useOnlineStatus()
@@ -42,8 +51,9 @@ export function FavoriteButton({ viewId, initialActive }: FavoriteButtonProps) {
     setIsSaving(true)
 
     try {
-      await favoritesService.toggle(viewId)
+      const isFavorite = await favoritesService.toggle(viewId)
       toast.success(previous ? 'Eliminado de favoritos' : 'Guardado en favoritos')
+      onToggle?.(isFavorite)
     } catch (error) {
       setIsActive(previous)
       toast.error(toUserMessage(error, 'No se pudo actualizar el favorito.'))
