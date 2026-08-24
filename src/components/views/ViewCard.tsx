@@ -67,7 +67,13 @@ export function ViewCard({
         </Link>
       </h2>
 
-      {!compacta ? <p className="card__excerpt">{excerpt(view.ladoA.descripcion)}</p> : null}
+      {!compacta ? (
+        <p className="card__excerpt">
+          {/* El termino se resalta tambien aqui, no solo en el titulo: la
+              Pantalla 13 lo pide en "el titulo y extracto de cada resultado". */}
+          <Highlight text={excerpt(view.ladoA.descripcion)} term={resaltar} />
+        </p>
+      ) : null}
 
       {view.hashtags.length > 0 ? (
         <ul className="tag-list" aria-label="Hashtags">
