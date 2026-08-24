@@ -12,6 +12,7 @@ import { PlaceholderPage } from './pages/PlaceholderPage'
 import { AuthorProfilePage } from './pages/AuthorProfilePage'
 import { ViewFormPage } from './pages/ViewFormPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { CategoryPage } from './pages/CategoryPage'
 
 /**
  * Tabla de rutas de la aplicacion (seccion 5 del enunciado).
@@ -32,17 +33,7 @@ export function AppRouter() {
           {/* --- Publicas ---------------------------------------------- */}
           <Route index element={<BoardPage />} />
 
-          <Route
-            path="categories/:id"
-            element={
-              <PlaceholderPage
-                pantalla={6}
-                titulo="Pagina de Categoria"
-                archivo="src/pages/CategoryPage.tsx"
-                descripcion="Publicaciones de una sola categoria, con los mismos filtros y ordenamiento del tablero, encabezado con nombre y descripcion de la categoria, y migas de pan."
-              />
-            }
-          />
+          <Route path="categories/:id" element={<CategoryPage />} />
 
           <Route path="views/:id" element={<ViewDetailPage />} />
 

@@ -120,9 +120,9 @@ export function Navbar() {
             abierto/cerrado, el foco y la operacion por teclado (Enter/Espacio),
             que es justo lo que exige el criterio de accesibilidad.
 
-            Cada entrada lleva al tablero filtrado (`/?category=`) y no a
-            /categories/:id: esa pantalla (la 6) todavia no esta construida, y
-            enlazar a un marcador seria peor experiencia que al filtro real.
+            Cada entrada lleva a la pagina propia de la categoria
+            (/categories/:id), que ademas del listado aporta el encabezado con
+            el conteo de publicaciones y las migas de pan.
           */}
           <details className="navbar__categories" ref={categoriesMenu}>
             <summary aria-label="Ver categorias">Categorias</summary>
@@ -133,7 +133,7 @@ export function Navbar() {
                 categories.map((category) => (
                   <li key={category.id}>
                     <Link
-                      to={`/?category=${category.id}`}
+                      to={`/categories/${category.id}`}
                       onClick={() => {
                         // Cerrar el menu al navegar: sin esto quedaria abierto
                         // sobre la pantalla de destino.

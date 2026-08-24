@@ -100,7 +100,7 @@ Otros comandos: `npm run build` (typecheck + bundle de producción), `npm run pr
 | 3 | Inicio de sesión | `/login` | ✅ Completa |
 | 4 | Detalle de publicación | `/views/:id` | ✅ Completa |
 | 5 | Crear / editar publicación | `/views/new`, `/views/:id/edit` | ✅ Completa |
-| 6 | Página de categoría | `/categories/:id` | ⏳ Pendiente |
+| 6 | Página de categoría | `/categories/:id` | ✅ Completa |
 | 7 | Admin — Gestión de usuarios | `/admin/users` | ⏳ Pendiente |
 | 8 | Admin — Gestión de categorías | `/admin/categories` | ⏳ Pendiente |
 | 9 | Admin — Moderación de contenido | `/admin/moderation` | ⏳ Pendiente |
@@ -233,9 +233,10 @@ expira (`JWT_EXPIRES_IN`, 7 días por defecto) y que cualquier 401 lo borra de i
    muestra y el indicador "en moderación" queda listo para cuando el campo exista.
 5. **Búsqueda global.** `GET /search` devuelve las caras recortadas (sin descripción ni
    contadores) y sin paginación; las tarjetas de resultados muestran contadores en cero.
-6. **Menú de categorías de la navbar.** Lleva al tablero filtrado (`/?category=`) en vez de
-   a `/categories/:id`, porque la Pantalla 6 todavía no está construida. Cuando exista,
-   solo cambia el destino del enlace en `components/layout/Navbar.tsx`.
+6. **La categoría no tiene índice propio.** La miga de pan de la Pantalla 6 muestra
+   `Inicio › Categorías › [Nombre]`, pero "Categorías" no es un enlace: la aplicación no
+   tiene una pantalla que liste todas las categorías (el enunciado no la pide). El acceso
+   es por el menú desplegable de la navbar.
 7. **"Mis Publicaciones" no muestra las despublicadas.** `GET /views` filtra siempre por
    `status: PUBLISHED` (ver `listViews` en el backend), incluso con `?autor=me`, así que
    una publicación retirada por un superadmin desaparece de la lista del perfil. El
