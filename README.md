@@ -101,17 +101,16 @@ Otros comandos: `npm run build` (typecheck + bundle de producción), `npm run pr
 | 4 | Detalle de publicación | `/views/:id` | ✅ Completa |
 | 5 | Crear / editar publicación | `/views/new`, `/views/:id/edit` | ✅ Completa |
 | 6 | Página de categoría | `/categories/:id` | ✅ Completa |
-| 7 | Admin — Gestión de usuarios | `/admin/users` | ⏳ Pendiente |
-| 8 | Admin — Gestión de categorías | `/admin/categories` | ⏳ Pendiente |
-| 9 | Admin — Moderación de contenido | `/admin/moderation` | ⏳ Pendiente |
+| 7 | Admin — Gestión de usuarios | `/admin/users` | ✅ Completa |
+| 8 | Admin — Gestión de categorías | `/admin/categories` | ✅ Completa |
+| 9 | Admin — Moderación de contenido | `/admin/moderation` | ✅ Completa |
 | 10 | Perfil de usuario | `/profile` | ✅ Completa |
 | 11 | Perfil público de autor | `/authors/:id` | ✅ Completa |
 | 12 | Error 404 / 403 | `/*`, `/403` | ✅ Completa |
 | 13 | Resultados de búsqueda | `/search` | ✅ Completa |
 
-Las pantallas pendientes tienen su ruta declarada y protegida por el guard que les
-corresponde, apuntando a un marcador que indica qué archivo hay que crear. La capa de
-servicio de todas ellas ya está implementada y tipada.
+Las trece pantallas del enunciado están implementadas, cada una bajo el guard que le
+corresponde (`RequireGuest`, `RequireAuth` o `RequireSuperadmin`).
 
 ## Capturas
 
@@ -248,6 +247,23 @@ expira (`JWT_EXPIRES_IN`, 7 días por defecto) y que cualquier 401 lo borra de i
    modo que hay que pedir cada publicación por separado. Por eso la pestaña carga de forma
    perezosa, al abrirla, y usa `Promise.allSettled`: un favorito que apunte a una
    publicación ya despublicada responde 404 y no debe tumbar la lista entera.
+9. **El API no impide que un superadmin se banee a sí mismo.** `banUser` solo comprueba que
+   el usuario exista; no hay error del servidor que manejar. El control que pide el
+   enunciado es, por tanto, responsabilidad exclusiva del cliente: en `/admin/users` el
+   botón no se renderiza sobre la fila propia.
+10. **Desactivar una categoría es irreversible desde la aplicación.** El API hace borrado
+    lógico (`deletedAt`), pero tanto `updateCategory` como `softDeleteCategory` empiezan por
+    `getActiveCategory`, que responde 404 si la categoría ya está de baja — y no existe
+    ningún endpoint que limpie `deletedAt`. Una categoría inactiva es un estado terminal,
+    así que la tabla no ofrece "Reactivar": sería un botón que siempre falla.
+11. **El conteo de publicaciones por categoría se calcula en el cliente.** El API no lo
+    expone, así que `listCategoriesWithCounts` pide `GET /views?category=X&limit=1` por
+    categoría y se queda con `total`. Solo cuenta las publicadas, que es suficiente para
+    advertir antes de desactivar una categoría con contenido.
+12. **El 409 al eliminar una categoría no llega nunca.** El enunciado pide manejarlo, pero
+    el borrado lógico del API no falla aunque la categoría tenga publicaciones asociadas.
+    La advertencia se construye con el conteo del punto anterior; el 409 se maneja igual, de
+    forma defensiva, por si el backend cambiara.
 
 ## Decisiones de diseño que conviene poder defender
 

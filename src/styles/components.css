@@ -245,6 +245,18 @@ a.badge--category:hover {
   border: 1px solid var(--warning);
 }
 
+.badge--success {
+  background: var(--success-soft);
+  color: var(--success);
+  border: 1px solid var(--success);
+}
+
+.badge--error {
+  background: var(--error-soft);
+  color: var(--error);
+  border: 1px solid var(--error);
+}
+
 .tag-list,
 .chip-list {
   display: flex;
@@ -925,6 +937,122 @@ mark {
   white-space: nowrap;
 }
 
+/* --- Pantallas 7 a 9: paneles de superadmin ------------------------------- */
+
+.admin-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-page__header h1 {
+  margin-bottom: 0.25rem;
+  font-size: 1.4rem;
+}
+
+.admin-page__count {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+.admin-page__search {
+  margin-bottom: 0;
+  min-width: min(20rem, 100%);
+}
+
+/* Nota al pie de una pantalla admin: explica limitaciones del API al operador. */
+.admin-page__note {
+  margin: 1rem 0 0;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.admin-page__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--gap);
+  margin-bottom: 1rem;
+}
+
+/* --- Tablas de administracion --------------------------------------------- */
+
+/*
+ * Una tabla no se puede estrechar indefinidamente sin volverse ilegible, asi
+ * que en movil se desplaza dentro de su propio contenedor. El requisito del
+ * enunciado es que no desborde LA PAGINA, no que la tabla quepa entera.
+ */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th,
+.table td {
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.table thead th {
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-bottom: 1px solid var(--border);
+}
+
+.table tbody tr + tr th,
+.table tbody tr + tr td {
+  border-top: 1px solid var(--border);
+}
+
+.table tbody tr:hover {
+  background: var(--surface-2);
+}
+
+/* La primera celda de cada fila es un <th scope="row">: encabeza su fila. */
+.table tbody th {
+  font-weight: 600;
+}
+
+/* Celdas con texto largo (titulos, descripciones) que si pueden partirse. */
+.table__wrap-text {
+  white-space: normal;
+  min-width: 14rem;
+}
+
+.table__hint {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-style: italic;
+}
+
+.table__actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
 /* --- Dialogo modal -------------------------------------------------------- */
 
 /*
@@ -1008,6 +1136,12 @@ mark {
   .profile__header {
     flex-direction: row;
     align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  .admin-page__header {
+    flex-direction: row;
+    align-items: flex-end;
     justify-content: space-between;
   }
 }

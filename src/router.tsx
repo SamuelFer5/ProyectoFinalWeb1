@@ -8,11 +8,13 @@ import { RegisterPage } from './pages/RegisterPage'
 import { SearchPage } from './pages/SearchPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ForbiddenPage } from './pages/ForbiddenPage'
-import { PlaceholderPage } from './pages/PlaceholderPage'
 import { AuthorProfilePage } from './pages/AuthorProfilePage'
 import { ViewFormPage } from './pages/ViewFormPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { CategoryPage } from './pages/CategoryPage'
+import { AdminUsersPage } from './pages/admin/AdminUsersPage'
+import { AdminCategoriesPage } from './pages/admin/AdminCategoriesPage'
+import { AdminModerationPage } from './pages/admin/AdminModerationPage'
 
 /**
  * Tabla de rutas de la aplicacion (seccion 5 del enunciado).
@@ -21,9 +23,10 @@ import { CategoryPage } from './pages/CategoryPage'
  * conexion, el pie de pagina y el contenedor de notificaciones. Las paginas de
  * error tambien, porque el enunciado exige que conserven el layout general.
  *
- * Las pantallas que aun no existen se declaran contra <PlaceholderPage> en
- * lugar de omitirse: la navbar y las tarjetas del tablero ya enlazan a varias
- * de ellas, y una ruta declarada evita que esos enlaces caigan en el 404.
+ * Las trece pantallas del enunciado estan implementadas. Cada una se declara
+ * bajo el guard que le corresponde: `RequireGuest` para login y registro,
+ * `RequireAuth` para lo que exige sesion y `RequireSuperadmin` para el panel de
+ * administracion.
  */
 export function AppRouter() {
   return (
@@ -58,39 +61,9 @@ export function AppRouter() {
 
           {/* --- Requieren rol de superadministrador -------------------- */}
           <Route element={<RequireSuperadmin />}>
-            <Route
-              path="admin/users"
-              element={
-                <PlaceholderPage
-                  pantalla={7}
-                  titulo="Admin — Gestion de Usuarios"
-                  archivo="src/pages/admin/AdminUsersPage.tsx"
-                  descripcion="Tabla paginada de usuarios con busqueda y acciones de banear / desbanear con modal de confirmacion. El superadmin no debe poder banearse a si mismo."
-                />
-              }
-            />
-            <Route
-              path="admin/categories"
-              element={
-                <PlaceholderPage
-                  pantalla={8}
-                  titulo="Admin — Gestion de Categorias"
-                  archivo="src/pages/admin/AdminCategoriesPage.tsx"
-                  descripcion="CRUD completo de categorias. La eliminacion debe contemplar el 409 cuando la categoria tiene publicaciones asociadas."
-                />
-              }
-            />
-            <Route
-              path="admin/moderation"
-              element={
-                <PlaceholderPage
-                  pantalla={9}
-                  titulo="Admin — Moderacion de Contenido"
-                  archivo="src/pages/admin/AdminModerationPage.tsx"
-                  descripcion="Tabla de publicaciones con filtro por estado y acciones de despublicar / republicar, actualizando la fila sin recargar la pagina."
-                />
-              }
-            />
+            <Route path="admin/users" element={<AdminUsersPage />} />
+            <Route path="admin/categories" element={<AdminCategoriesPage />} />
+            <Route path="admin/moderation" element={<AdminModerationPage />} />
           </Route>
 
           {/* --- Comodin: cualquier ruta no declarada ------------------- */}

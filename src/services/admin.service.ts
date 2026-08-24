@@ -1,4 +1,5 @@
 import { http, buildQuery } from './http'
+import { viewsService } from './views.service'
 import { toCategory, toUser, toView } from './mappers'
 import type {
   AdminUsersResponseDto,
@@ -102,6 +103,45 @@ export const adminService = {
   async listCategories(signal?: AbortSignal): Promise<Category[]> {
     const dto = await http.get<CategoriesResponseDto>('/admin/categories', { signal })
     return dto.categories.map(toCategory)
+  },
+
+  /**
+   * Categorias con su numero de publicaciones asociadas.
+   *
+   * El API no informa ese conteo en ninguna parte, y la Pantalla 8 lo necesita
+   * para dos cosas: la columna de la tabla y la advertencia especifica antes de
+   * desactivar una categoria que todavia tiene contenido. Se obtiene pidiendo
+   * el listado de cada categoria con `limit=1` y quedandose solo con `total`,
+   * que es la consulta mas barata que permite el API.
+   *
+   * SALVEDAD: `GET /views` solo cuenta las publicaciones PUBLICADAS, asi que el
+   * numero excluye las que un superadmin haya despublicado. Para el proposito
+   * de la pantalla (avisar de que hay contenido en juego) es suficiente.
+   *
+   * Si el conteo de alguna categoria falla, se deja sin definir en vez de
+   * tumbar la tabla entera: el listado de categorias es lo importante.
+   */
+  async listCategoriesWithCounts(signal?: AbortSignal): Promise<Category[]> {
+    const categorias = await adminService.listCategories(signal)
+
+    const conteos = await Promise.all(
+      categorias.map(async (categoria) => {
+        try {
+          const resultado = await viewsService.list(
+            { category: categoria.id, page: 1, limit: 1 },
+            signal,
+          )
+          return resultado.total
+        } catch {
+          return undefined
+        }
+      }),
+    )
+
+    return categorias.map((categoria, indice) => ({
+      ...categoria,
+      totalPublicaciones: conteos[indice],
+    }))
   },
 
   /**
