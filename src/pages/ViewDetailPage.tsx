@@ -5,6 +5,7 @@ import { CommentThreads } from '../components/views/CommentThreads'
 import { FavoriteButton } from '../components/views/FavoriteButton'
 import { ShareButton } from '../components/views/ShareButton'
 import { EmptyState, ErrorState, Spinner } from '../components/ui/States'
+import { ConfirmDialog } from '../components/ui/Modal'
 import { viewsService } from '../services/views.service'
 import { historyService } from '../services/history.service'
 import { favoritesService } from '../services/favorites.service'
@@ -40,6 +41,7 @@ export function ViewDetailPage() {
   const [notFound, setNotFound] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
   const [isModerating, setIsModerating] = useState(false)
+  const [confirmarModeracion, setConfirmarModeracion] = useState(false)
 
   // --- Carga de la publicacion ----------------------------------------------
   useEffect(() => {
@@ -128,19 +130,16 @@ export function ViewDetailPage() {
   /**
    * Despublicar / republicar — accion exclusiva del superadmin.
    *
-   * Se confirma antes de ejecutar porque retira contenido del tablero publico,
-   * y al terminar se parchea el estado local en lugar de recargar: el
-   * enunciado pide que la vista refleje el cambio sin recargar la pagina.
+   * La confirmacion se pide con `ConfirmDialog` y no con `window.confirm()`:
+   * el dialogo nativo del navegador no respeta el tema, no es estilizable y
+   * bloquea el hilo, y el enunciado penaliza explicitamente su uso. Al terminar
+   * se parchea el estado local en lugar de recargar, porque el enunciado pide
+   * que la vista refleje el cambio sin recargar la pagina.
    */
   const handleModerate = useCallback(async () => {
     if (!id || view === null || isModerating) return
 
     const despublicando = view.publicado
-    const mensaje = despublicando
-      ? 'Retirar esta publicacion del tablero publico?'
-      : 'Devolver esta publicacion al tablero publico?'
-
-    if (!window.confirm(mensaje)) return
 
     setIsModerating(true)
     try {
@@ -152,10 +151,12 @@ export function ViewDetailPage() {
 
       setView((current) => (current === null ? current : { ...current, publicado: !despublicando }))
       toast.success(despublicando ? 'Publicacion retirada del tablero' : 'Publicacion restaurada')
+      setConfirmarModeracion(false)
     } catch (cause) {
       // El 403 se comunica como acceso denegado, sin expulsar al login: el
       // usuario puede estar autenticado y solo carecer del rol.
       toast.error(toUserMessage(cause, 'No se pudo cambiar el estado de la publicacion.'))
+      setConfirmarModeracion(false)
     } finally {
       setIsModerating(false)
     }
@@ -241,7 +242,7 @@ export function ViewDetailPage() {
                 type="button"
                 className={`btn ${view.publicado ? 'btn--danger' : 'btn--primary'}`}
                 onClick={() => {
-                  void handleModerate()
+                  setConfirmarModeracion(true)
                 }}
                 disabled={isModerating}
               >
@@ -269,6 +270,25 @@ export function ViewDetailPage() {
         threads={threads}
         onReload={async () => {
           await loadThreads()
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmarModeracion}
+        titulo={view.publicado ? 'Despublicar publicacion' : 'Republicar publicacion'}
+        mensaje={
+          view.publicado
+            ? 'La publicacion dejara de aparecer en el tablero publico. Solo usted y su autor podran verla.'
+            : 'La publicacion volvera a aparecer en el tablero publico para todos los usuarios.'
+        }
+        confirmLabel={view.publicado ? 'Despublicar' : 'Republicar'}
+        danger={view.publicado}
+        busy={isModerating}
+        onConfirm={() => {
+          void handleModerate()
+        }}
+        onClose={() => {
+          setConfirmarModeracion(false)
         }}
       />
     </article>
