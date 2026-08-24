@@ -99,13 +99,15 @@ Otros comandos: `npm run build` (typecheck + bundle de producción), `npm run pr
 | 2 | Registro | `/register` | ✅ Completa |
 | 3 | Inicio de sesión | `/login` | ✅ Completa |
 | 4 | Detalle de publicación | `/views/:id` | ✅ Completa |
-| 12 | Error 404 / 403 | `/*`, `/403` | ✅ Completa |
+| 5 | Crear / editar publicación | `/views/new`, `/views/:id/edit` | ✅ Completa |
 | 6 | Página de categoría | `/categories/:id` | ⏳ Pendiente |
-| 5 | Crear / editar publicación | `/views/new`, `/views/:id/edit` | ⏳ Pendiente |
-| 10 | Perfil de usuario | `/profile` | ⏳ Pendiente |
-| 11 | Perfil público de autor | `/authors/:id` | ⏳ Pendiente |
-| 13 | Resultados de búsqueda | `/search` | ⏳ Pendiente |
-| 7–9 | Paneles de superadmin | `/admin/*` | ⏳ Pendiente |
+| 7 | Admin — Gestión de usuarios | `/admin/users` | ⏳ Pendiente |
+| 8 | Admin — Gestión de categorías | `/admin/categories` | ⏳ Pendiente |
+| 9 | Admin — Moderación de contenido | `/admin/moderation` | ⏳ Pendiente |
+| 10 | Perfil de usuario | `/profile` | ✅ Completa |
+| 11 | Perfil público de autor | `/authors/:id` | ✅ Completa |
+| 12 | Error 404 / 403 | `/*`, `/403` | ✅ Completa |
+| 13 | Resultados de búsqueda | `/search` | ✅ Completa |
 
 Las pantallas pendientes tienen su ruta declarada y protegida por el guard que les
 corresponde, apuntando a un marcador que indica qué archivo hay que crear. La capa de
@@ -234,6 +236,17 @@ expira (`JWT_EXPIRES_IN`, 7 días por defecto) y que cualquier 401 lo borra de i
 6. **Menú de categorías de la navbar.** Lleva al tablero filtrado (`/?category=`) en vez de
    a `/categories/:id`, porque la Pantalla 6 todavía no está construida. Cuando exista,
    solo cambia el destino del enlace en `components/layout/Navbar.tsx`.
+7. **"Mis Publicaciones" no muestra las despublicadas.** `GET /views` filtra siempre por
+   `status: PUBLISHED` (ver `listViews` en el backend), incluso con `?autor=me`, así que
+   una publicación retirada por un superadmin desaparece de la lista del perfil. El
+   indicador de estado está implementado y se pinta si el API llegara a devolverlas; entre
+   tanto, la sección avisa al usuario para que la ausencia no se lea como pérdida de datos.
+   El autor sí puede abrir la publicación por enlace directo: `GET /views/:id` sí se la
+   devuelve.
+8. **"Mis Favoritos" hace N+1 peticiones.** `GET /users/me/favorites` devuelve solo IDs, de
+   modo que hay que pedir cada publicación por separado. Por eso la pestaña carga de forma
+   perezosa, al abrirla, y usa `Promise.allSettled`: un favorito que apunte a una
+   publicación ya despublicada responde 404 y no debe tumbar la lista entera.
 
 ## Decisiones de diseño que conviene poder defender
 

@@ -761,6 +761,170 @@ mark {
   font-size: 0.9rem;
 }
 
+/* --- Pantalla 10: perfil de usuario --------------------------------------- */
+
+.profile__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.profile__header h1 {
+  margin-bottom: 0.5rem;
+}
+
+.profile__data {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.5rem;
+  margin: 0;
+}
+
+.profile__data div {
+  display: flex;
+  gap: 0.35rem;
+  align-items: baseline;
+}
+
+.profile__data dt {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.profile__data dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.profile__header-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* --- Pestanas ------------------------------------------------------------- */
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+  overflow-x: auto;
+}
+
+.tabs__tab {
+  flex: 0 0 auto;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tabs__tab:hover {
+  color: var(--text);
+}
+
+.tabs__tab.is-active {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+
+/* El panel recibe foco al navegar con teclado; el anillo no debe perderse. */
+.profile__panel:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+.profile__note {
+  margin: 0 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+/* Cada publicacion propia es tarjeta + acciones, apiladas dentro de la rejilla. */
+.profile__owned {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile__owned .card {
+  height: 100%;
+}
+
+.profile__owned-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.profile__owned-actions .btn {
+  flex: 1;
+  justify-content: center;
+}
+
+.profile__unpublished {
+  margin: 0;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  background: var(--warning-soft);
+  color: var(--warning);
+  font-size: 0.85rem;
+}
+
+.profile__history-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--gap);
+}
+
+.profile__history-header .profile__note {
+  flex: 1 1 18rem;
+}
+
+/* --- Historial ------------------------------------------------------------ */
+
+.history-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.history-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.history-item__title {
+  flex: 1 1 12rem;
+  font-weight: 600;
+}
+
+.history-item__date {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
 /* --- Dialogo modal -------------------------------------------------------- */
 
 /*
@@ -838,6 +1002,13 @@ mark {
   .toast-stack {
     left: auto;
     width: min(24rem, calc(100vw - 2rem));
+  }
+
+  /* En movil el encabezado del perfil se apila; aqui ya cabe en una fila. */
+  .profile__header {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
   }
 }
 
