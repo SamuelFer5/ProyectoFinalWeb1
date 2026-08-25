@@ -67,6 +67,21 @@ export function ViewCard({
         </Link>
       </h2>
 
+      {/*
+        En la variante compacta el titulo visible es el de la Postura, porque
+        `View.titulo` se deriva de `ladoA.titulo`. `GET /search` si devuelve el
+        titulo de las DOS caras, asi que mostrar tambien el de la Contrapostura
+        da el contexto que falta y refuerza la premisa del proyecto: cada tema
+        tiene dos lados. Fuera de la variante compacta no se repite porque ahi
+        ya se ven el extracto y los contadores de ambas caras.
+      */}
+      {compacta && view.ladoB.titulo ? (
+        <p className="card__counterpart">
+          <span className="card__counterpart-label">Contrapostura</span>
+          <Highlight text={view.ladoB.titulo} term={resaltar} />
+        </p>
+      ) : null}
+
       {!compacta ? (
         <p className="card__excerpt">
           {/* El termino se resalta tambien aqui, no solo en el titulo: la

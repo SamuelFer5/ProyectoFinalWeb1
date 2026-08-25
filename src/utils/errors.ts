@@ -18,8 +18,3 @@ export function toUserMessage(error: unknown, fallback = 'Ocurrio un error inesp
 export function toFieldErrors(error: unknown): FieldErrors {
   return isApiError(error) ? error.fieldErrors : {}
 }
-
-/** `true` si el fallo fue de red o timeout, no una respuesta del servidor. */
-export function isOfflineError(error: unknown): boolean {
-  return isApiError(error) && error.isNetworkError
-}
