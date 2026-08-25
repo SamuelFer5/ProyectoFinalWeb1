@@ -125,7 +125,10 @@ export const viewsService = {
     const views = applySideSort(dto.views.map(toView), sort)
     const limit = dto.limit || 1
 
-    if ((query.page ?? 1) === 1) {
+    // Solo la primera pagina de una consulta que el usuario esta viendo de
+    // verdad sirve como respaldo sin conexion. `skipSnapshot` excluye las
+    // consultas internas (conteos del panel de admin, por ejemplo).
+    if ((query.page ?? 1) === 1 && !query.skipSnapshot) {
       cacheService.set<BoardSnapshot>(BOARD_SNAPSHOT_KEY, { views })
     }
 
