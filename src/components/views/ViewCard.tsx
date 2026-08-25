@@ -26,6 +26,11 @@ interface ViewCardProps {
   compacta?: boolean
   /** Termino a resaltar en el titulo, en la pantalla de resultados. */
   resaltar?: string
+  /**
+   * Se propaga al boton de favorito. Lo usa la seccion "Mis Favoritos" del
+   * perfil para retirar la tarjeta cuando deja de ser favorita.
+   */
+  onFavoriteChange?: (esFavorito: boolean) => void
 }
 
 /**
@@ -35,13 +40,23 @@ interface ViewCardProps {
  * Punto clave del enunciado: los contadores del Lado A y del Lado B se
  * muestran por separado, nunca sumados, porque son magnitudes independientes.
  */
-export function ViewCard({ view, favorito, compacta = false, resaltar }: ViewCardProps) {
+export function ViewCard({
+  view,
+  favorito,
+  compacta = false,
+  resaltar,
+  onFavoriteChange,
+}: ViewCardProps) {
   return (
     <article className="card">
       <header className="card__header">
         <span className="badge badge--category">{view.categoria.nombre}</span>
         <div className="card__actions">
-          <FavoriteButton viewId={view.id} initialActive={favorito} />
+          <FavoriteButton
+            viewId={view.id}
+            initialActive={favorito}
+            onChange={onFavoriteChange}
+          />
           <ShareButton viewId={view.id} titulo={view.titulo} />
         </div>
       </header>
@@ -52,7 +67,28 @@ export function ViewCard({ view, favorito, compacta = false, resaltar }: ViewCar
         </Link>
       </h2>
 
-      {!compacta ? <p className="card__excerpt">{excerpt(view.ladoA.descripcion)}</p> : null}
+      {/*
+        En la variante compacta el titulo visible es el de la Postura, porque
+        `View.titulo` se deriva de `ladoA.titulo`. `GET /search` si devuelve el
+        titulo de las DOS caras, asi que mostrar tambien el de la Contrapostura
+        da el contexto que falta y refuerza la premisa del proyecto: cada tema
+        tiene dos lados. Fuera de la variante compacta no se repite porque ahi
+        ya se ven el extracto y los contadores de ambas caras.
+      */}
+      {compacta && view.ladoB.titulo ? (
+        <p className="card__counterpart">
+          <span className="card__counterpart-label">Contrapostura</span>
+          <Highlight text={view.ladoB.titulo} term={resaltar} />
+        </p>
+      ) : null}
+
+      {!compacta ? (
+        <p className="card__excerpt">
+          {/* El termino se resalta tambien aqui, no solo en el titulo: la
+              Pantalla 13 lo pide en "el titulo y extracto de cada resultado". */}
+          <Highlight text={excerpt(view.ladoA.descripcion)} term={resaltar} />
+        </p>
+      ) : null}
 
       {view.hashtags.length > 0 ? (
         <ul className="tag-list" aria-label="Hashtags">

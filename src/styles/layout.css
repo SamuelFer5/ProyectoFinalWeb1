@@ -1,5 +1,3 @@
-/** Estructura de pagina: shell, navbar, tablero, detalle, formularios de auth. */
-
 .app-shell {
   display: flex;
   flex-direction: column;
@@ -209,10 +207,47 @@
   white-space: nowrap;
 }
 
+/* --- Migas de pan --------------------------------------------------------- */
+
+.breadcrumb {
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* El separador es decorativo: se genera en CSS para que no lo lea un lector
+   de pantalla, que ya recibe la estructura por la lista y por aria-current. */
+.breadcrumb li + li::before {
+  content: '›';
+  margin-right: 0.4rem;
+  color: var(--text-muted);
+}
+
+.breadcrumb [aria-current='page'] {
+  color: var(--text);
+  font-weight: 600;
+}
+
 /* --- Tablero -------------------------------------------------------------- */
 
 .board__intro {
   margin-bottom: 1.25rem;
+}
+
+.board__count {
+  margin-top: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--text-muted);
 }
 
 .board__intro h1 {
@@ -565,8 +600,7 @@
 
 /* --- Paginas de error y marcadores ---------------------------------------- */
 
-.error-page,
-.placeholder {
+.error-page {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -583,16 +617,10 @@
   color: var(--brand);
 }
 
-.error-page__hint,
-.placeholder__desc {
+.error-page__hint {
   max-width: 48ch;
   color: var(--text-muted);
   font-size: 0.92rem;
-}
-
-.placeholder__file {
-  font-size: 0.85rem;
-  color: var(--text-muted);
 }
 
 /* --- Escritorio ----------------------------------------------------------- */

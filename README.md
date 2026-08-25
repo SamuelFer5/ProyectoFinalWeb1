@@ -30,15 +30,31 @@ Universidad Técnica Nacional · II Cuatrimestre 2026 · Prof. Bladimir Arroyo B
 
 ## Cómo ejecutar el proyecto
 
+Este repositorio contiene solo el frontend. El REST API (`doscarasapi`) es el insumo que
+entrega el docente y se ejecuta aparte: son dos programas distintos que se comunican por
+HTTP. El frontend no lee el código del API, únicamente consume su URL.
+
 ### 1. Levantar el API
 
-El API vive en `../ProyectoFinal/doscarasapi`. La vía más corta es Docker, que levanta
-PostgreSQL y el API juntos, aplica las migraciones y siembra categorías y el superadmin:
+Coloque la carpeta `doscarasapi` al lado de este repositorio, de modo que la estructura
+quede así:
+
+```
+carpeta-de-trabajo/
+├── doscarasapi/          ← el API entregado por el docente
+└── ProyectoFinalWeb1/    ← este repositorio
+```
+
+Lo más rápido es Docker: levanta PostgreSQL y el API juntos, aplica las migraciones y siembra
+las categorías y el superadministrador.
 
 ```bash
-cd ../ProyectoFinal/doscarasapi
+cd ../doscarasapi
 docker compose up -d --build      # http://localhost:3000
 ```
+
+Si prefiere dejar el API en otra ubicación, lo único que importa es que quede escuchando en
+la URL que se configure en `VITE_API_URL` (ver más abajo).
 
 Verificación rápida:
 
@@ -61,7 +77,7 @@ Credenciales del superadministrador sembrado: `admin@doscaras.dev` / `ChangeMe12
 Requiere PostgreSQL instalado localmente:
 
 ```bash
-cd ../ProyectoFinal/doscarasapi
+cd ../doscarasapi
 npm install
 cp doscaras/.env.example .env     # editar DATABASE_URL, JWT_SECRET, SUPERADMIN_*
 npx prisma migrate dev
@@ -72,10 +88,13 @@ npm run dev
 
 ### 2. Levantar el frontend
 
+Desde la raíz de **este** repositorio:
+
 ```bash
+cd ../ProyectoFinalWeb1   # si viene del paso anterior
 npm install
-cp .env.example .env    # la URL por defecto ya apunta al API local
-npm run dev             # http://localhost:5173
+cp .env.example .env      # la URL por defecto ya apunta al API local
+npm run dev               # http://localhost:5173
 ```
 
 Otros comandos: `npm run build` (typecheck + bundle de producción), `npm run preview`,
@@ -93,23 +112,24 @@ Otros comandos: `npm run build` (typecheck + bundle de producción), `npm run pr
 
 ## Estado de las pantallas
 
-| # | Pantalla | Ruta | Estado |
-| --- | --- | --- | --- |
-| 1 | Tablero principal | `/` | ✅ Completa |
-| 2 | Registro | `/register` | ✅ Completa |
-| 3 | Inicio de sesión | `/login` | ✅ Completa |
-| 4 | Detalle de publicación | `/views/:id` | ✅ Completa |
-| 12 | Error 404 / 403 | `/*`, `/403` | ✅ Completa |
-| 6 | Página de categoría | `/categories/:id` | ⏳ Pendiente |
-| 5 | Crear / editar publicación | `/views/new`, `/views/:id/edit` | ⏳ Pendiente |
-| 10 | Perfil de usuario | `/profile` | ⏳ Pendiente |
-| 11 | Perfil público de autor | `/authors/:id` | ⏳ Pendiente |
-| 13 | Resultados de búsqueda | `/search` | ⏳ Pendiente |
-| 7–9 | Paneles de superadmin | `/admin/*` | ⏳ Pendiente |
+Las trece pantallas del enunciado están implementadas, cada una bajo el guard que le
+corresponde (`RequireGuest`, `RequireAuth` o `RequireSuperadmin`).
 
-Las pantallas pendientes tienen su ruta declarada y protegida por el guard que les
-corresponde, apuntando a un marcador que indica qué archivo hay que crear. La capa de
-servicio de todas ellas ya está implementada y tipada.
+| # | Pantalla | Ruta | Guard |
+| --- | --- | --- | --- |
+| 1 | Tablero principal | `/` | Público |
+| 2 | Registro | `/register` | `RequireGuest` |
+| 3 | Inicio de sesión | `/login` | `RequireGuest` |
+| 4 | Detalle de publicación | `/views/:id` | Público |
+| 5 | Crear / editar publicación | `/views/new`, `/views/:id/edit` | `RequireAuth` |
+| 6 | Página de categoría | `/categories/:id` | Público |
+| 7 | Admin: gestión de usuarios | `/admin/users` | `RequireSuperadmin` |
+| 8 | Admin: gestión de categorías | `/admin/categories` | `RequireSuperadmin` |
+| 9 | Admin: moderación de contenido | `/admin/moderation` | `RequireSuperadmin` |
+| 10 | Perfil de usuario | `/profile` | `RequireAuth` |
+| 11 | Perfil público de autor | `/authors/:id` | Público |
+| 12 | Error 404 / 403 | `/*`, `/403` | Público |
+| 13 | Resultados de búsqueda | `/search` | Público |
 
 ## Capturas
 
@@ -185,7 +205,7 @@ formulario ya autenticado (`context/AuthProvider.tsx`).
 | 401 | Limpia la sesión, borra el token y avisa "Su sesión ha expirado" |
 | 403 | Muestra el motivo real (sin permisos / cuenta suspendida / sin activar). **No** redirige al login |
 | 404 | Mensaje contextual: "Esta publicación no existe o fue eliminada" |
-| 409 | Inline en el campo — p. ej. "El correo ya está registrado" |
+| 409 | Inline en el campo, p. ej. "El correo ya está registrado" |
 | 5xx | Mensaje genérico al usuario + `console.error` para depuración |
 | Red / timeout | Un reintento automático en los GET antes de mostrar el error |
 
@@ -229,13 +249,50 @@ expira (`JWT_EXPIRES_IN`, 7 días por defecto) y que cualquier 401 lo borra de i
 3. **Descripción de categorías.** El modelo `Category` del API no tiene el campo.
 4. **Moderación de comentarios.** El API no expone estado de moderación; la advertencia se
    muestra y el indicador "en moderación" queda listo para cuando el campo exista.
-5. **Búsqueda global.** `GET /search` devuelve las caras recortadas (sin descripción ni
-   contadores) y sin paginación; las tarjetas de resultados muestran contadores en cero.
-6. **Menú de categorías de la navbar.** Lleva al tablero filtrado (`/?category=`) en vez de
-   a `/categories/:id`, porque la Pantalla 6 todavía no está construida. Cuando exista,
-   solo cambia el destino del enlace en `components/layout/Navbar.tsx`.
+5. **Búsqueda global: no hay extracto que resaltar.** El enunciado pide resaltar el término
+   dentro del título y del extracto de cada resultado. El título sí se resalta, pero el
+   extracto no llega: en `search.service.ts` del backend la consulta pide
+   `sides: { select: { type: true, title: true } }`, o sea el tipo y el título y nada más.
+   Por eso los resultados usan la variante `compacta` de la tarjeta, que oculta el extracto y
+   los contadores en vez de mostrar un párrafo vacío y dos ceros. Traerlos obligaría a pedir
+   el detalle de cada resultado por separado, hasta 20 peticiones extra por búsqueda.
+   `Highlight` ya se aplica al extracto en `ViewCard`, así que el día que el API devuelva la
+   descripción funciona sin tocar nada. El endpoint tampoco pagina: devuelve 20 resultados
+   como máximo.
+6. **La categoría no tiene índice propio.** La miga de pan de la Pantalla 6 muestra
+   `Inicio › Categorías › [Nombre]`, pero "Categorías" no es un enlace: la aplicación no
+   tiene una pantalla que liste todas las categorías (el enunciado no la pide). El acceso
+   es por el menú desplegable de la navbar.
+7. **"Mis Publicaciones" no muestra las despublicadas.** `GET /views` filtra siempre por
+   `status: PUBLISHED` (ver `listViews` en el backend), incluso con `?autor=me`, así que
+   una publicación retirada por un superadmin desaparece de la lista del perfil. El
+   indicador de estado está implementado y se pinta si el API llegara a devolverlas; entre
+   tanto, la sección avisa al usuario para que la ausencia no se lea como pérdida de datos.
+   El autor sí puede abrir la publicación por enlace directo: `GET /views/:id` sí se la
+   devuelve.
+8. **"Mis Favoritos" hace N+1 peticiones.** `GET /users/me/favorites` devuelve solo IDs, de
+   modo que hay que pedir cada publicación por separado. Por eso la pestaña carga de forma
+   perezosa, al abrirla, y usa `Promise.allSettled`: un favorito que apunte a una
+   publicación ya despublicada responde 404 y no debe tumbar la lista entera.
+9. **El API no impide que un superadmin se banee a sí mismo.** `banUser` solo comprueba que
+   el usuario exista; no hay error del servidor que manejar. El control que pide el
+   enunciado es, por tanto, responsabilidad exclusiva del cliente: en `/admin/users` el
+   botón no se renderiza sobre la fila propia.
+10. **Desactivar una categoría es irreversible desde la aplicación.** El API hace borrado
+    lógico (`deletedAt`), pero tanto `updateCategory` como `softDeleteCategory` empiezan por
+    `getActiveCategory`, que responde 404 si la categoría ya está de baja, y no existe ningún
+    endpoint que limpie `deletedAt`. Una categoría inactiva es un estado terminal, así que la
+    tabla no ofrece "Reactivar": sería un botón que siempre fallaría.
+11. **El conteo de publicaciones por categoría se calcula en el cliente.** El API no lo
+    expone, así que `listCategoriesWithCounts` pide `GET /views?category=X&limit=1` por
+    categoría y se queda con `total`. Solo cuenta las publicadas, que es suficiente para
+    advertir antes de desactivar una categoría con contenido.
+12. **El 409 al eliminar una categoría no llega nunca.** El enunciado pide manejarlo, pero
+    el borrado lógico del API no falla aunque la categoría tenga publicaciones asociadas.
+    La advertencia se construye con el conteo del punto anterior; el 409 se maneja igual, de
+    forma defensiva, por si el backend cambiara.
 
-## Decisiones de diseño que conviene poder defender
+## Decisiones de diseño
 
 - **La URL es la única fuente de verdad de los filtros del tablero.** `BoardPage` los
   deriva de `useSearchParams` en cada render en lugar de duplicarlos en `useState`. Así,
@@ -247,8 +304,15 @@ expira (`JWT_EXPIRES_IN`, 7 días por defecto) y que cualquier 401 lo borra de i
   borraría las preferencias guardadas.
 - **`SidePanel` recibe un único `Side` y no conoce la otra cara.** Es la garantía
   estructural de que los contadores de Lado A y Lado B no pueden compartir estado.
-- **El menú de categorías usa `<details>/<summary>`.** El navegador aporta gratis el
-  estado abierto/cerrado, el foco y la operación por teclado que exige la accesibilidad.
+- **El menú de categorías usa `<details>/<summary>`.** El navegador ya resuelve el estado
+  abierto/cerrado, el foco y la operación por teclado que exige la accesibilidad.
+- **Los modales se construyen sobre el `<dialog>` nativo.** Por lo mismo: `showModal()` da el
+  *focus trap*, el cierre con Escape, el fondo inerte y la devolución del foco al elemento que
+  abrió el diálogo. Hacerlo a mano son decenas de líneas de `useEffect`.
+- **Los cambios sin guardar se detectan contra una instantánea del formulario.** Se compara
+  serializando a JSON y no campo por campo, porque `FormState` es un árbol (dos lados, cada
+  uno con su arreglo de fuentes) y la comparación manual habría que actualizarla cada vez que
+  cambie la forma del formulario.
 
 ## Convenciones de trabajo
 
