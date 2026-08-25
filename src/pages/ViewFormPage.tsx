@@ -8,6 +8,7 @@ import {
 } from '../components/views/SideFields'
 import { HashtagInput } from '../components/views/HashtagInput'
 import { ErrorState } from '../components/ui/States'
+import { ConfirmDialog } from '../components/ui/Modal'
 import { catalogService } from '../services/catalog.service'
 import { viewsService, type ViewFormPayload } from '../services/views.service'
 import { CACHE_KEYS, cacheService } from '../services/cache.service'
@@ -58,6 +59,14 @@ export function ViewFormPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [draftOffer, setDraftOffer] = useState<FormState | null>(null)
+  const [confirmarSalida, setConfirmarSalida] = useState(false)
+
+  /**
+   * Estado del formulario tal como quedo despues de cargarlo, para poder
+   * detectar si el usuario modifico algo. En creacion es el formulario vacio;
+   * en edicion, los datos que devolvio el API.
+   */
+  const [original, setOriginal] = useState<FormState>(EMPTY_FORM)
 
   // --- Categorias del desplegable (cache-first, igual que el tablero) -------
   useEffect(() => {
@@ -98,12 +107,16 @@ export function ViewFormPage() {
               : [{ tipo: 'enlace', url: '', titulo: '' }],
         })
 
-        setForm({
+        const cargado: FormState = {
           categoriaId: view.categoria.id,
           ladoA: toDraft(view.ladoA),
           ladoB: toDraft(view.ladoB),
           hashtags: view.hashtags.map((hashtag) => hashtag.nombre),
-        })
+        }
+
+        setForm(cargado)
+        // La misma instantanea sirve de referencia para detectar cambios.
+        setOriginal(cargado)
       })
       .catch((cause: unknown) => {
         if (controller.signal.aborted) return
@@ -149,6 +162,31 @@ export function ViewFormPage() {
       clearTimeout(timer)
     }
   }, [form, isEdit, draftOffer])
+
+  // --- Cambios sin guardar --------------------------------------------------
+
+  /**
+   * Compara el formulario actual contra la instantanea de partida.
+   *
+   * Se serializa a JSON en lugar de comparar campo por campo porque `FormState`
+   * es un arbol (dos lados, cada uno con un arreglo de fuentes) y una
+   * comparacion manual habria que actualizarla cada vez que cambie la forma.
+   * Ambos objetos se construyen a partir de la misma estructura literal, asi
+   * que el orden de las claves coincide y la comparacion es fiable.
+   */
+  const hayCambiosSinGuardar = JSON.stringify(form) !== JSON.stringify(original)
+
+  /**
+   * Cancelar. Solo se pregunta si de verdad hay algo que perder: un dialogo de
+   * confirmacion sobre un formulario intacto es ruido, no seguridad.
+   */
+  const handleCancelar = () => {
+    if (hayCambiosSinGuardar) {
+      setConfirmarSalida(true)
+      return
+    }
+    navigate(-1)
+  }
 
   // --- Validacion en cliente ------------------------------------------------
   function validar(): boolean {
@@ -365,14 +403,31 @@ export function ViewFormPage() {
             type="button"
             className="btn btn--ghost"
             disabled={isSaving}
-            onClick={() => {
-              navigate(-1)
-            }}
+            onClick={handleCancelar}
           >
             Cancelar
           </button>
         </div>
       </form>
+
+      <ConfirmDialog
+        open={confirmarSalida}
+        titulo="Descartar cambios"
+        mensaje={
+          isEdit
+            ? 'Tiene cambios sin guardar en esta publicacion. Si sale ahora se perderan.'
+            : 'Tiene cambios sin guardar. El borrador queda almacenado en este navegador, pero saldra del formulario.'
+        }
+        confirmLabel="Salir sin guardar"
+        danger
+        onConfirm={() => {
+          setConfirmarSalida(false)
+          navigate(-1)
+        }}
+        onClose={() => {
+          setConfirmarSalida(false)
+        }}
+      />
     </div>
   )
 }

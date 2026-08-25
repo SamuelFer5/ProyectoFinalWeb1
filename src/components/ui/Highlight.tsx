@@ -16,13 +16,18 @@ export function Highlight({ text, term }: HighlightProps) {
   const needle = term?.trim() ?? ''
   if (needle.length === 0) return <>{text}</>
 
-  const pattern = new RegExp(`(${escapeRegExp(needle)})`, 'gi')
-  const pieces = text.split(pattern)
+  // `split` con grupo de captura devuelve las coincidencias intercaladas entre
+  // el resto del texto: ['antes', 'termino', 'entre', 'termino', 'despues'].
+  const pieces = text.split(new RegExp(`(${escapeRegExp(needle)})`, 'gi'))
 
   return (
     <>
       {pieces.map((piece, index) =>
-        pattern.test(piece) && piece.toLowerCase() === needle.toLowerCase() ? (
+        // Basta comparar el fragmento con el termino. Antes se anteponia un
+        // `pattern.test(piece)`, redundante y ademas fragil: una expresion
+        // regular con bandera /g conserva `lastIndex` entre llamadas, de modo
+        // que el resultado depende del fragmento anterior.
+        piece.toLowerCase() === needle.toLowerCase() ? (
           <mark key={index}>{piece}</mark>
         ) : (
           <Fragment key={index}>{piece}</Fragment>
