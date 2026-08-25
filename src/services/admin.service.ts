@@ -128,7 +128,9 @@ export const adminService = {
       categorias.map(async (categoria) => {
         try {
           const resultado = await viewsService.list(
-            { category: categoria.id, page: 1, limit: 1 },
+            // `skipSnapshot`: este conteo no es el tablero del usuario, no debe
+            // pisar la instantanea que alimenta el modo sin conexion.
+            { category: categoria.id, page: 1, limit: 1, skipSnapshot: true },
             signal,
           )
           return resultado.total

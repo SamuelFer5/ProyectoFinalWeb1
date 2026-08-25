@@ -100,6 +100,14 @@ export interface ViewQuery extends Partial<BoardFilters> {
   autorId?: string
   /** `?autor=me` — publicaciones propias. Requiere JWT. */
   soloMias?: boolean
+  /**
+   * Impide que la consulta sobrescriba la instantanea del tablero
+   * (`lasdoscaras_board`). Lo usan las consultas que no representan lo que
+   * el usuario esta viendo — por ejemplo el conteo por categoria del panel
+   * de superadmin, que pide `limit=1` y dejaria el modo sin conexion con una
+   * sola tarjeta ajena en vez del ultimo tablero real.
+   */
+  skipSnapshot?: boolean
 }
 
 /** Entrada de `lasdoscaras_history` (maximo 20, cola FIFO). */
@@ -109,3 +117,4 @@ export interface HistoryEntry {
   categoria: string
   fechaVista: string
 }
+

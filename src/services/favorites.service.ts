@@ -1,6 +1,7 @@
 import { http } from './http'
 import { CACHE_KEYS, cacheService } from './cache.service'
 import { viewsService } from './views.service'
+import { isApiError } from '../models'
 import type { FavoriteResponseDto, MyFavoritesResponseDto } from '../models/dto'
 import type { View } from '../models'
 
@@ -51,6 +52,11 @@ export const favoritesService = {
    * `GET /views/:id` responde 404 a quien no es su autor. Con `Promise.all` un
    * solo 404 tumbaria la lista entera; asi, las que ya no existen simplemente
    * se omiten y el usuario ve el resto de sus favoritos.
+   *
+   * IMPORTANTE: solo se omite el 404, que es el unico fallo esperado. Un 500,
+   * un corte de red o un `abort` se propagan para que la pantalla pueda mostrar
+   * su estado de error y ofrecer reintentar. Descartarlos aqui haria que el
+   * perfil diera la lista por cargada y mostrara menos favoritos sin avisar.
    */
   async listViews(signal?: AbortSignal): Promise<View[]> {
     const ids = await favoritesService.sync(signal)
@@ -60,9 +66,22 @@ export const favoritesService = {
       ids.map((id) => viewsService.detail(id, signal)),
     )
 
-    return results
-      .filter((result): result is PromiseFulfilledResult<View> => result.status === 'fulfilled')
-      .map((result) => result.value)
+    const favoritas: View[] = []
+
+    for (const result of results) {
+      if (result.status === 'fulfilled') {
+        favoritas.push(result.value)
+        continue
+      }
+
+      // Publicacion despublicada o borrada: se omite en silencio, es esperado.
+      if (isApiError(result.reason) && result.reason.status === 404) continue
+
+      // Cualquier otro fallo si es un problema real y debe verlo el usuario.
+      throw result.reason
+    }
+
+    return favoritas
   },
 
   /** POST /views/:id/favorite — alta en el API y en el cache. */
