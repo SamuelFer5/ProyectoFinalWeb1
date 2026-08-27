@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, NavLink, useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
 import { useTheme } from '../../hooks/useTheme'
 import { useToast } from '../../hooks/useToast'
@@ -18,11 +18,44 @@ export function Navbar() {
   const { theme, toggleTheme } = useTheme()
   const toast = useToast()
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
 
-  const [term, setTerm] = useState(() => searchParams.get('q') ?? '')
+  // La URL es la unica fuente de verdad del termino, igual que con los filtros
+  // del tablero. El estado local existe solo para que el input sea controlado
+  // entre pulsacion y pulsacion, y se resincroniza en cuanto la URL cambia por
+  // otra via: el campo de refinamiento de /search, un enlace entrante o el
+  // boton Atras del navegador.
+  const urlTerm = searchParams.get('q') ?? ''
+  const isOnSearch = location.pathname === '/search'
+
+  const [term, setTerm] = useState(urlTerm)
   const debouncedTerm = useDebounce(term, 300)
-  const isFirstRun = useRef(true)
+
+  // Ultimo termino que ESTA caja mando a la URL. El cambio de URL llega ~300 ms
+  // tarde (lo dispara el debounce), y para entonces el usuario puede haber
+  // escrito mas. Comparar contra el input actual daria un falso negativo y le
+  // borrariamos lo tecleado; comparar contra lo que escribimos nosotros
+  // distingue el eco propio de un cambio venido de fuera.
+  const lastPushedRef = useRef<string | null>(null)
+
+  const [syncedUrlTerm, setSyncedUrlTerm] = useState(urlTerm)
+  if (syncedUrlTerm !== urlTerm) {
+    setSyncedUrlTerm(urlTerm)
+    if (urlTerm !== lastPushedRef.current) setTerm(urlTerm)
+  }
+
+  // Se leen por referencia para que el efecto de navegacion dependa UNICAMENTE
+  // del debounce. `navigate` tampoco es estable —react-router lo memoriza con
+  // el pathname actual entre sus dependencias—, y como dependencia reejecutaba
+  // el efecto en un render donde `debouncedTerm` aun era el termino anterior,
+  // reponiendo en la URL un valor ya obsoleto.
+  const urlTermRef = useRef(urlTerm)
+  urlTermRef.current = urlTerm
+  const isOnSearchRef = useRef(isOnSearch)
+  isOnSearchRef.current = isOnSearch
+  const navigateRef = useRef(navigate)
+  navigateRef.current = navigate
 
   // Acceso a categorias desde la navbar (Pantalla 1). Arranca con el catalogo
   // cacheado para que el menu este utilizable antes de que el API conteste, y
@@ -48,18 +81,30 @@ export function Navbar() {
   }, [])
 
   /**
-   * Navegacion automatica tras el debounce. Se omite el primer ciclo para no
-   * redirigir solo por montar el componente con un termino ya presente en la URL.
+   * Navegacion automatica tras el debounce.
+   *
+   * La comparacion contra el termino de la URL cubre sola el arranque: montar
+   * con `?q=` ya puesto no navega, porque no hay nada que cambiar. Y estando ya
+   * en /search se navega con `replace`, de modo que escribir una frase deja una
+   * sola entrada en el historial en vez de una por pausa al teclear.
    */
   useEffect(() => {
-    if (isFirstRun.current) {
-      isFirstRun.current = false
+    const trimmed = debouncedTerm.trim()
+    if (trimmed === urlTermRef.current) return
+
+    lastPushedRef.current = trimmed
+
+    if (trimmed.length === 0) {
+      // Vaciar la caja limpia los resultados, pero solo si ya se esta en la
+      // pantalla de busqueda: borrarla desde el tablero no debe sacar de el.
+      if (isOnSearchRef.current) navigateRef.current('/search', { replace: true })
       return
     }
-    if (debouncedTerm.trim().length >= 2) {
-      navigate(`/search?q=${encodeURIComponent(debouncedTerm.trim())}`)
-    }
-  }, [debouncedTerm, navigate])
+
+    navigateRef.current(`/search?q=${encodeURIComponent(trimmed)}`, {
+      replace: isOnSearchRef.current,
+    })
+  }, [debouncedTerm])
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
@@ -70,7 +115,9 @@ export function Navbar() {
       return
     }
 
-    navigate(`/search?q=${encodeURIComponent(trimmed)}`)
+    // Mismo criterio que el efecto: estando ya en /search se reemplaza la
+    // entrada en vez de apilar una nueva por cada envio.
+    navigate(`/search?q=${encodeURIComponent(trimmed)}`, { replace: isOnSearch })
   }
 
   const handleLogout = () => {
