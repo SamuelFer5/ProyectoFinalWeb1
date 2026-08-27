@@ -224,6 +224,18 @@ async function toApiError(response: Response): Promise<ApiError> {
 const NETWORK_ERROR_MESSAGE =
   'No fue posible conectar con el servidor. Verifique su conexion e intente de nuevo.'
 
+const TIMEOUT_MESSAGE =
+  'El servidor tardo demasiado en responder. Intente de nuevo en un momento.'
+
+/**
+ * El API no contesto dentro de `TIMEOUT_MS`.
+ *
+ * Se distingue del fallo de red porque NO debe reintentarse: si la primera
+ * llamada agoto los 10 segundos, la segunda va a agotarlos tambien y el usuario
+ * termina esperando mas de veinte antes de ver el error.
+ */
+class TimeoutError extends Error {}
+
 // --- Nucleo del cliente ------------------------------------------------------
 
 interface RequestOptions {
@@ -266,6 +278,11 @@ async function performRequest(
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: signals,
     })
+  } catch (error) {
+    // La senal combinada no dice quien aborto: se consulta la del timeout, y se
+    // descarta el caso en que el llamador ya habia cancelado por su cuenta.
+    if (timeoutController.signal.aborted && !signal?.aborted) throw new TimeoutError()
+    throw error
   } finally {
     clearTimeout(timeoutId)
   }
@@ -286,6 +303,9 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
     } catch (error) {
       // Cancelacion explicita del llamador: no es un fallo, no se reintenta.
       if (options.signal?.aborted) throw error
+
+      // Un timeout tampoco: repetirlo solo duplica la espera del usuario.
+      if (error instanceof TimeoutError) throw new ApiError(0, TIMEOUT_MESSAGE, {}, true)
 
       lastNetworkError = new ApiError(0, NETWORK_ERROR_MESSAGE, {}, true)
 

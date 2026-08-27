@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { ViewCard } from '../components/views/ViewCard'
 import { CardSkeletonGrid, EmptyState, ErrorState } from '../components/ui/States'
@@ -33,20 +33,47 @@ export function SearchPage() {
   const [error, setError] = useState<string | null>(null)
   const [reloadToken, setReloadToken] = useState(0)
 
-  // Llegar por un enlace externo o cambiar el termino desde la navbar debe
-  // reflejarse en el campo de refinamiento.
-  useEffect(() => {
-    setDraft(term)
-  }, [term])
+  // Llegar por un enlace externo, cambiar el termino desde la navbar o volver
+  // con el boton Atras debe reflejarse en el campo de refinamiento.
+  //
+  // El ajuste se hace durante el render y no en un efecto a proposito. Con un
+  // efecto, el ciclo en el que cambia `term` se comprometia con un
+  // `debouncedDraft` todavia viejo y el efecto de mas abajo devolvia la URL al
+  // termino anterior, dejando la busqueda de la navbar clavada en el primer
+  // termino con el que se monto esta pantalla.
+  // Ultimo termino que ESTE campo mando a la URL, para no pisar lo que el
+  // usuario haya seguido escribiendo mientras corria el debounce: el eco de
+  // nuestra propia escritura se ignora, cualquier otro cambio se adopta.
+  const lastPushedRef = useRef<string | null>(null)
+
+  const [syncedTerm, setSyncedTerm] = useState(term)
+  if (syncedTerm !== term) {
+    setSyncedTerm(term)
+    if (term !== lastPushedRef.current) setDraft(term)
+  }
+
+  // El termino vigente en la URL y el propio `setSearchParams`, leidos por
+  // referencia para que el efecto de abajo dependa UNICAMENTE del debounce.
+  //
+  // `setSearchParams` no es estable: react-router lo memoriza con
+  // `[navigate, searchParams]`, asi que cambia de identidad en cada cambio de
+  // URL. Como dependencia, reejecutaba el efecto en un render en el que
+  // `debouncedDraft` seguia siendo el termino anterior, y ese valor viejo
+  // volvia a la URL — que es exactamente lo que dejaba la busqueda congelada.
+  const termRef = useRef(term)
+  termRef.current = term
+  const setSearchParamsRef = useRef(setSearchParams)
+  setSearchParamsRef.current = setSearchParams
 
   // El refinamiento reescribe la URL. `replace` evita ensuciar el historial con
   // una entrada por cada pulsacion ya consolidada.
   useEffect(() => {
     const trimmed = debouncedDraft.trim()
-    if (trimmed === term) return
+    if (trimmed === termRef.current.trim()) return
 
-    setSearchParams(trimmed ? { q: trimmed } : {}, { replace: true })
-  }, [debouncedDraft, term, setSearchParams])
+    lastPushedRef.current = trimmed
+    setSearchParamsRef.current(trimmed ? { q: trimmed } : {}, { replace: true })
+  }, [debouncedDraft])
 
   // --- Carga de resultados --------------------------------------------------
   useEffect(() => {
